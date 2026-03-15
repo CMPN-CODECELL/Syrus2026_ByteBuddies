@@ -2,12 +2,16 @@
 
 
 ## 🏆 SYRUS Hackathon Submission
-**Team:** ByteBuddies
+## Team Name
+ByteBuddies
 
-### Problem Statement
-AI-powered platform that converts jewelry images into customizable interactive 3D models.
+## Problem Statement Title
+AI-Powered 2D to 3D Jewelry Generator
 
-### Track
+## Problem Statement
+An AI-powered platform that converts jewelry images into customizable interactive 3D models.
+
+## Track
 AI / 3D Web Visualization
 
 ### Demo Video
