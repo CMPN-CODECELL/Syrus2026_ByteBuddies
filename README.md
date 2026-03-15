@@ -1,10 +1,20 @@
 # 💎 Gemcraft AI — 2D to 3D Jewelry Generator
 
-> Upload any jewelry photo and get a fully interactive 3D model with live material customization and GLB/STL export — powered by Claude AI vision and Three.js WebGL.
 
-![Gemcraft AI](docs/preview.png)
+## 🏆 SYRUS Hackathon Submission
+**Team:** ByteBuddies
 
----
+### Problem Statement
+AI-powered platform that converts jewelry images into customizable interactive 3D models.
+
+### Track
+AI / 3D Web Visualization
+
+### Demo Video
+https://drive.google.com/file/d/1tSCHML2SaknSjjaa1DH81kzdrW9Fdl56/view?usp=sharing
+
+### Presentation (PPT)
+https://drive.google.com/file/d/1aYjvv4GWGsaqhD2WNSfsgAp1KlZJup8p/view?usp=sharing
 
 ## ✨ Features
 
@@ -17,9 +27,7 @@
 - **Works Offline** — Canvas pixel classifier fallback when no API key
 - **Zero Build Step** — Single HTML file, open in any browser
 
----
-
-## 🚀 Quick Start
+##  Quick Start
 
 ### Option A — Frontend only (no Python needed)
 
@@ -49,8 +57,6 @@ pip install -r requirements.txt
 python backend/server.py
 ```
 
----
-
 ## 📁 Project Structure
 
 ```
@@ -77,8 +83,6 @@ gemcraft-ai/
 ├── .gitignore
 └── README.md
 ```
-
----
 
 ## 🎮 How It Works
 
@@ -116,8 +120,6 @@ Click any metal swatch or gemstone — the 3D model updates live with correct PB
 - **STL** → STLExporter → base64 download
 - Both scaled ×10 (1 unit = 1 mm) for CAD accuracy
 
----
-
 ## 🔧 Tech Stack
 
 | Layer | Technology |
@@ -129,8 +131,6 @@ Click any metal swatch or gemstone — the 3D model updates live with correct PB
 | Export | GLTFExporter · STLExporter |
 | Backend | FastAPI · uvicorn · trimesh · OpenCV |
 | Fonts | Playfair Display · Outfit · Space Mono |
-
----
 
 ## ⚙️ Backend API
 
@@ -159,8 +159,6 @@ See [docs/API.md](docs/API.md) for full endpoint reference.
 | Shadow maps disabled | Removes expensive shadow render passes |
 | Context loss recovery | Auto-rebuilds scene if GPU is ever lost |
 
----
-
 ## 📦 Dependencies
 
 **Frontend** (CDN, no install):
@@ -174,13 +172,10 @@ See [docs/API.md](docs/API.md) for full endpoint reference.
 - `numpy` · `opencv-python-headless` · `pillow`
 - `trimesh` · `scipy`
 
----
 
 ## 📄 License
 
 MIT License — free to use, modify, and distribute.
-
----
 
 ## 🙏 Credits
 
@@ -189,6 +184,5 @@ MIT License — free to use, modify, and distribute.
 - **trimesh** — Server-side parametric mesh generation
 - **OpenCV** — Server-side image processing
 
----
 
 Built as a hackathon prototype. Single HTML file · No React · No Node.js · No Webpack.
