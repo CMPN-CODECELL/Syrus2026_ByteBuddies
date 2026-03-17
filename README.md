@@ -1,101 +1,163 @@
-# 💎 Gemcraft AI — 2D to 3D Jewelry Generator
+💎 Gemcraft AI — 2D to 3D Jewelry Generator
 
+🏆 SYRUS Hackathon Submission
 
-## 🏆 SYRUS Hackathon Submission
-## Team Name
+👥 Team Name
+
 ByteBuddies
 
-## Problem Statement Title
-AI-Powered 2D to 3D Jewelry Generator
+🧩 Problem Statement
 
-## Problem Statement
-An AI-powered platform that converts jewelry images into customizable interactive 3D models.
+An AI-powered platform that converts jewelry images into customizable, interactive 3D models and enables real-time virtual try-on directly in the browser.
 
-## Track
+🎯 Track
+
 AI / 3D Web Visualization
 
-### Demo Video
-https://drive.google.com/file/d/1tSCHML2SaknSjjaa1DH81kzdrW9Fdl56/view?usp=sharing
+🎥 Demo Video
 
-### Presentation (PPT)
-https://drive.google.com/file/d/1aYjvv4GWGsaqhD2WNSfsgAp1KlZJup8p/view?usp=sharing
+https://drive.google.com/drive/u/0/folders/1begkYmHll2iO4WHiwjnxKuutIeA5CL9R
 
-## ✨ Features
+📊 Presentation (PPT)
 
-- **AI Image Analysis** — Claude Vision (claude-opus-4-5) reads your photo and identifies jewelry type, gem count, metal color, and style
-- **5 Jewelry Types** — Ring, Pendant, Earring, Bracelet, Brooch
-- **Real-time 3D Viewer** — Three.js WebGL with orbit controls, auto-rotate, wireframe mode
-- **Live Material Swap** — 6 metals × 8 gemstones with PBR rendering
-- **Budget Tiers** — Smart material filtering from Budget to Ultra Luxury
-- **Export** — GLB (Blender/Unity) and STL (3D printing) at 10× mm scale
-- **Works Offline** — Canvas pixel classifier fallback when no API key
-- **Zero Build Step** — Single HTML file, open in any browser
+https://drive.google.com/file/d/1PrBbww5K6BQ8iKsaO4xUdh-PmIPOukjb/view?usp=drivesdk
 
-##  Quick Start
+Summary Template
 
-### Option A — Frontend only (no Python needed)
+https://drive.google.com/file/d/1Mgf5wHx0JIXnsr9ANQYvSJA1iwqb77IR/view?usp=drivesdk
 
-1. Open `frontend/index.html` in Chrome or Firefox
-2. Get a free API key from [console.anthropic.com](https://console.anthropic.com)
-3. Paste your key in the API Configuration box → click **Connect**
-4. Upload a jewelry photo or click a Quick Demo button
-5. Customize materials, export GLB/STL
+✨ Key Features
+🧠 AI Image Analysis
 
-### Option B — With Python backend (full mesh quality)
+Powered by Claude Vision (claude-opus-4-5)
 
-```bash
-# Clone the repo
-git clone https://github.com/yourusername/gemcraft-ai.git
-cd gemcraft-ai
+Detects:
 
-# Install and run
-bash start.sh
-```
+Jewelry type
 
-Then open `frontend/index.html` in your browser. The backend runs on `http://localhost:8000`.
+Gem count
 
-### Manual backend start
+Metal type
 
-```bash
-pip install -r requirements.txt
-python backend/server.py
-```
+Style
 
-## 📁 Project Structure
+Works on real-world images (any angle/background)
 
-```
-gemcraft-ai/
-│
-├── frontend/
-│   └── index.html          # Complete app — single file, zero build
-│
-├── backend/
-│   └── server.py           # FastAPI backend (optional, enhances quality)
-│
-├── models/
-│   └── README.md           # Exported GLB/STL files land here
-│
-├── scripts/
-│   └── download_threejs.sh # Download Three.js for offline use
-│
-├── docs/
-│   ├── API.md              # Full REST API reference
-│   └── ARCHITECTURE.md     # System design decisions
-│
-├── requirements.txt        # Python dependencies
-├── start.sh                # One-command startup script
-├── .gitignore
-└── README.md
-```
+💍 Multi-Jewelry Support
 
-## 🎮 How It Works
+Supports 5 categories:
 
-### 1. Upload
-Drop any jewelry photo. Works with studio shots, phone photos, white backgrounds or dark — any angle.
+Ring
 
-### 2. AI Analysis
-Claude's vision model reads the image and returns:
-```json
+Pendant / Necklace
+
+Earring
+
+Bracelet
+
+Brooch
+
+🧍 Context-Aware Jewelry Detection (NEW 🔥)
+
+Understands where jewelry is worn:
+
+Finger (Ring)
+
+Neck (Pendant)
+
+Ear (Earring)
+
+Wrist (Bracelet)
+
+Improves:
+
+Model accuracy
+
+Proportions
+
+Future AR compatibility
+
+🕶️ Virtual Try-On (🔥 SHOWSTOPPER)
+
+Experience jewelry live using your camera — no app required.
+
+📷 Real-time camera integration
+
+✋ Ring mode — detects palm center
+
+📿 Pendant mode — detects neck position
+
+👂 Earring mode — detects ear/cheek region
+
+🎯 Live 3D overlay on body
+
+🎚️ Adjustable scale for realistic fitting
+
+🔒 100% browser-based (no data sent to server)
+
+🌐 Real-Time 3D Viewer
+
+Built with Three.js (WebGL)
+
+Features:
+
+Orbit controls
+
+Auto-rotate
+
+Wireframe mode
+
+🎨 Live Material Customization
+
+6 Metals × 8 Gemstones
+
+Physically-Based Rendering (PBR):
+
+Metals → realistic reflections
+
+Gems → transmission, IOR, sparkle
+
+💰 Budget-Based Smart Suggestions
+
+Automatically suggests cheaper alternatives
+
+Supports:
+
+Budget → Premium → Luxury tiers
+
+📦 Export Ready
+
+Export formats:
+
+GLB → Blender / Unity
+
+STL → 3D Printing
+
+Scaled for real-world use (1 unit = 1 mm)
+
+⚡ Works Offline
+
+Fallback pixel-based detection when API not available
+
+Fully functional without backend
+
+🧩 Zero Build Setup
+
+Single HTML file
+
+No React, No Node.js
+
+Runs instantly in browser
+
+🎮 How It Works
+1️⃣ Upload Image
+
+Upload any jewelry photo (phone/studio, any background)
+
+2️⃣ AI Analysis
+
+Returns structured data:
+
 {
   "jewelry_type": "ring",
   "gem_count": 1,
@@ -104,89 +166,121 @@ Claude's vision model reads the image and returns:
   "confidence": 0.94,
   "style": "Classic"
 }
-```
+3️⃣ 3D Model Generation
 
-### 3. 3D Generation
-Parametric mesh builder constructs the jewelry in Three.js:
-- `buildRing(gemCount)` — torus band + prong settings + gems
-- `buildPendant(gemCount)` — bail loop + frame + center stone
-- `buildEarring()` — post + basket + stud gem
-- `buildBracelet(gemCount)` — arc band + tennis stones
-- `buildBrooch(gemCount)` — starburst frame + center + accents
+Parametric builder creates models:
 
-### 4. Customize
-Click any metal swatch or gemstone — the 3D model updates live with correct PBR values:
-- Metals: metalness=1.0, roughness varies per metal
-- Gems: MeshPhysicalMaterial with transmission, IOR, clearcoat
+Ring → torus band + gem settings
 
-### 5. Export
-- **GLB** → `bakeMaterials()` embeds correct PBR data → GLTFExporter → base64 download
-- **STL** → STLExporter → base64 download
-- Both scaled ×10 (1 unit = 1 mm) for CAD accuracy
+Pendant → chain loop + frame
 
-## 🔧 Tech Stack
+Earring → stud + basket
 
-| Layer | Technology |
-|---|---|
-| Frontend | HTML5 · CSS3 · JavaScript ES2020 |
-| 3D Engine | Three.js r128 (WebGL) |
-| AI | Anthropic Claude API (claude-opus-4-5) |
-| Materials | MeshStandardMaterial · MeshPhysicalMaterial |
-| Export | GLTFExporter · STLExporter |
-| Backend | FastAPI · uvicorn · trimesh · OpenCV |
-| Fonts | Playfair Display · Outfit · Space Mono |
+Bracelet → arc band + stones
 
-## ⚙️ Backend API
+Brooch → decorative structure
 
-See [docs/API.md](docs/API.md) for full endpoint reference.
+4️⃣ Customization
 
-| Endpoint | Method | Purpose |
-|---|---|---|
-| `/health` | GET | Server ping |
-| `/api/materials` | GET | All metals + gems |
-| `/api/analyze` | POST | Image → jewelry analysis |
-| `/api/generate` | POST | Build 3D mesh → GLB |
-| `/api/customize` | POST | Swap materials on session |
-| `/api/budget-suggest` | POST | Cheaper alternatives |
-| `/api/export/{fmt}` | POST | Download GLB or STL |
+Change metal & gemstone instantly
 
----
+Real-time visual updates
 
-## 🛡️ Performance Notes
+5️⃣ Virtual Try-On
 
-| Technique | Why |
-|---|---|
-| `pixelRatio = 1` | Prevents GPU overload on 4K/retina screens |
-| Single WebGL context | Browsers cap at 4–8 contexts; two caused `Context Lost` |
-| CSS hero ring | Saves a full GPU context vs a second WebGL canvas |
-| 40fps throttle | Halves GPU usage vs 60fps |
-| Shadow maps disabled | Removes expensive shadow render passes |
-| Context loss recovery | Auto-rebuilds scene if GPU is ever lost |
+Enable camera
 
-## 📦 Dependencies
+Select mode (Ring / Pendant / Earring)
 
-**Frontend** (CDN, no install):
-- Three.js r128 — `cdnjs.cloudflare.com`
-- GLTFExporter — `cdn.jsdelivr.net`
-- STLExporter — `cdn.jsdelivr.net`
-- Google Fonts — `fonts.googleapis.com`
+See jewelry on your body in real time
 
-**Backend** (pip):
-- `fastapi` · `uvicorn` · `python-multipart`
-- `numpy` · `opencv-python-headless` · `pillow`
-- `trimesh` · `scipy`
+6️⃣ Export
 
+Download model in GLB or STL format
 
-## 📄 License
+🏗️ Architecture
 
-MIT License — free to use, modify, and distribute.
+Frontend (Browser)
 
-## 🙏 Credits
+HTML5 · CSS3 · JavaScript
 
-- **Anthropic Claude** — AI vision and image analysis
-- **Three.js** — WebGL 3D rendering engine
-- **trimesh** — Server-side parametric mesh generation
-- **OpenCV** — Server-side image processing
+Three.js (WebGL rendering)
 
+AI Layer
 
-Built as a hackathon prototype. Single HTML file · No React · No Node.js · No Webpack.
+Claude Vision API
+
+Backend (Optional)
+
+FastAPI · OpenCV · Trimesh
+
+🔧 Tech Stack
+Layer	Technology
+Frontend	HTML5 · CSS3 · JavaScript
+3D Engine	Three.js (WebGL)
+AI	Claude Vision API
+Backend	FastAPI · OpenCV · Trimesh
+Export	GLTFExporter · STLExporter
+🛡️ Performance Optimizations
+
+pixelRatio = 1 → avoids GPU overload
+
+Single WebGL context → prevents crashes
+
+40 FPS throttle → reduces GPU usage
+
+No shadow maps → faster rendering
+
+Context recovery system
+
+💥 Unique Selling Points (USP)
+🔥 Browser-Based AR Try-On
+
+Real-time jewelry try-on using webcam
+
+No mobile app or AR SDK required
+
+🧠 Context-Aware AI
+
+Detects body placement (ear, neck, finger, wrist)
+
+⚡ Zero Setup
+
+Runs instantly — no installation
+
+🎨 Full Customization + Export
+
+From image → 3D → customization → export
+
+🏆 Why This Stands Out
+
+Gemcraft AI is not just a generator — it is a complete AI-powered jewelry platform that combines image understanding, 3D generation, and real-time AR try-on directly in the browser.
+
+📁 Project Structure
+gemcraft-ai/
+├── frontend/
+│   └── index.html
+├── backend/
+│   └── server.py
+├── models/
+├── docs/
+├── scripts/
+├── requirements.txt
+└── README.md
+📜 License
+
+MIT License
+
+🙏 Credits
+
+Anthropic Claude (AI Vision)
+
+Three.js (3D Rendering)
+
+OpenCV (Image Processing)
+
+Trimesh (Mesh Generation)
+
+🚀 Final Note
+
+Built as a hackathon prototype with a vision to revolutionize digital jewelry design, customization, and virtual try-on experiences.
