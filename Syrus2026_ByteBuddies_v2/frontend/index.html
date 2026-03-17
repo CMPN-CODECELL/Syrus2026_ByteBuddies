@@ -1,0 +1,2889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Gemcraft AI — 2D to 3D Jewelry Studio · AR Try-On · Price Estimator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+<style>
+/* ═══════════════ DESIGN TOKENS — OFF-WHITE LUXURY ═══════════════ */
+:root{
+  /* Site palette — warm off-white */
+  --bg:#faf7f2;
+  --bg2:#f3ede2;
+  --bg3:#ede4d4;
+  --card:#ffffff;
+  --card2:#fdf9f4;
+  --ink:#1a120a;
+  --ink2:#2d1f10;
+  --body:#4a3820;
+  --muted:#8a7055;
+  --rule:rgba(160,110,50,.15);
+  --rule2:rgba(160,110,50,.30);
+
+  /* Accent — deep burgundy/gold */
+  --wine:#7b1d2a;
+  --wine2:#9b2535;
+  --wine3:#c03040;
+  --gold:#b8860b;
+  --gold2:#d4a017;
+  --gold3:#f0c040;
+  --glow:rgba(184,134,11,.22);
+
+  /* 3D viewer — maroon/deep red */
+  --v-bg:#1a0508;
+  --v-bg2:#2d0810;
+  --v-bg3:#3d0a14;
+
+  --r:14px;
+  --shadow:0 4px 24px rgba(90,40,20,.10);
+  --shadow2:0 12px 48px rgba(90,40,20,.16);
+  --font-display:'Playfair Display',serif;
+  --font-body:'Outfit',sans-serif;
+  --font-mono:'Space Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--ink);
+     overflow-x:hidden;line-height:1.6}
+
+/* ═══════ SCROLLBAR ═══════ */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:2px}
+
+/* ═══════ HERO / NAV ═══════ */
+#site-nav{position:fixed;top:0;left:0;right:0;z-index:500;
+          display:flex;align-items:center;justify-content:space-between;
+          padding:14px 40px;backdrop-filter:blur(20px);
+          border-bottom:1px solid var(--rule);
+          background:rgba(250,247,242,.92);transition:all .3s;
+          box-shadow:0 1px 20px rgba(90,40,20,.07)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-gem{width:34px;height:34px;border-radius:10px;
+         background:linear-gradient(135deg,var(--wine),var(--wine2));
+         display:flex;align-items:center;justify-content:center;font-size:16px;
+         box-shadow:0 4px 14px rgba(123,29,42,.35)}
+.nav-name{font-family:var(--font-display);font-size:18px;letter-spacing:.03em;color:var(--ink)}
+.nav-sub{font-family:var(--font-mono);font-size:7px;color:var(--muted);
+         letter-spacing:.25em;text-transform:uppercase;margin-top:1px}
+.nav-links{display:flex;gap:30px;font-size:12px;font-weight:500}
+.nav-links a{color:var(--muted);text-decoration:none;transition:color .2s;
+             letter-spacing:.04em;cursor:pointer}
+.nav-links a:hover{color:var(--wine2)}
+.nav-cta{background:linear-gradient(135deg,var(--wine),var(--wine2));
+         color:#fff;padding:8px 20px;border-radius:8px;font-size:12px;
+         font-weight:600;border:none;cursor:pointer;letter-spacing:.03em;
+         transition:all .2s;font-family:var(--font-body);
+         box-shadow:0 4px 14px rgba(123,29,42,.28)}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(123,29,42,.4)}
+
+/* ═══════ HERO SECTION ═══════ */
+#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;
+      position:relative;overflow:hidden;padding:100px 40px 60px;
+      background:linear-gradient(160deg,var(--bg) 0%,var(--bg2) 60%,#edddd0 100%)}
+.hero-bg{position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 55% at 55% 35%, rgba(123,29,42,.07) 0%, transparent 65%),
+             radial-gradient(ellipse 40% 40% at 15% 75%, rgba(184,134,11,.05) 0%, transparent 55%)}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;max-width:1200px;
+           width:100%;align-items:center;position:relative}
+.hero-text .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;
+                  border-radius:100px;border:1px solid rgba(123,29,42,.28);
+                  background:rgba(123,29,42,.07);font-family:var(--font-mono);
+                  font-size:9px;letter-spacing:.18em;color:var(--wine2);
+                  text-transform:uppercase;margin-bottom:24px}
+.hero-text h1{font-family:var(--font-display);font-size:clamp(36px,4.5vw,62px);
+              line-height:1.12;margin-bottom:20px;letter-spacing:-.01em;color:var(--ink)}
+.hero-text h1 em{font-style:italic;color:var(--wine2)}
+.hero-text p{font-size:15px;color:var(--body);line-height:1.8;margin-bottom:32px;max-width:480px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+.btn-primary{background:linear-gradient(135deg,var(--wine),var(--wine2));color:#fff;
+             padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;
+             border:none;cursor:pointer;font-family:var(--font-body);transition:all .2s;
+             letter-spacing:.02em;box-shadow:0 6px 20px rgba(123,29,42,.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(123,29,42,.42)}
+.btn-outline{background:transparent;color:var(--wine);padding:14px 28px;border-radius:10px;
+             font-size:14px;font-weight:500;border:2px solid rgba(123,29,42,.3);cursor:pointer;
+             font-family:var(--font-body);transition:all .2s}
+.btn-outline:hover{background:rgba(123,29,42,.06);border-color:var(--wine2);color:var(--wine2)}
+.hero-stats{display:flex;gap:32px;margin-top:36px;padding-top:28px;border-top:1px solid var(--rule)}
+.hs{text-align:left}
+.hs-val{font-family:var(--font-display);font-size:26px;color:var(--wine2);display:block}
+.hs-lbl{font-size:11px;color:var(--muted);letter-spacing:.06em}
+/* Hero visual */
+.hero-visual{position:relative;height:480px}
+.hv-frame{width:100%;height:100%;border-radius:24px;border:1px solid rgba(123,29,42,.25);
+          background:radial-gradient(ellipse at 45% 38%,var(--v-bg3),var(--v-bg2) 55%,var(--v-bg));
+          position:relative;overflow:hidden;
+          box-shadow:0 32px 80px rgba(90,20,20,.5),inset 0 0 60px rgba(192,48,64,.06),0 0 0 1px rgba(123,29,42,.2)}
+/* hero canvas replaced with CSS ring — no WebGL needed */
+/* ── Pure CSS Hero Ring (replaces WebGL hero, saves a full GPU context) ── */
+.css-ring-scene{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+                position:relative;overflow:hidden}
+.css-ring-wrap{animation:heroSpin 6s linear infinite;transform-style:preserve-3d}
+.css-ring{position:relative;width:180px;height:180px;display:flex;align-items:center;
+          justify-content:center;transform:rotateX(20deg)}
+.css-ring-band{width:180px;height:180px;border-radius:50%;
+               border:22px solid transparent;
+               background:conic-gradient(from 0deg,
+                 #f0c040 0%,#d4a017 20%,#f5d070 35%,#b8860b 50%,
+                 #f0c040 65%,#e8b840 80%,#d4a017 100%) border-box,
+               linear-gradient(#1a0508,#1a0508) padding-box;
+               box-shadow:0 0 30px rgba(200,150,26,.5),inset 0 0 15px rgba(200,150,26,.2);
+               position:absolute}
+.css-ring-gem-holder{position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+                     display:flex;align-items:center;justify-content:center}
+.css-ring-gem{width:28px;height:28px;background:linear-gradient(135deg,#ddf4ff,#88ccff,#ddf4ff);
+              clip-path:polygon(50% 0%,100% 35%,85% 100%,15% 100%,0% 35%);
+              box-shadow:0 0 20px rgba(136,204,255,.8),0 0 40px rgba(136,204,255,.4);
+              animation:gemPulse 2s ease-in-out infinite}
+.css-prong{position:absolute;width:3px;height:14px;background:linear-gradient(#f0c040,#d4a017);
+           border-radius:2px;box-shadow:0 0 4px rgba(200,150,26,.6)}
+.p1{top:-8px;left:8px;transform:rotate(-20deg)}
+.p2{top:-8px;right:8px;transform:rotate(20deg)}
+.p3{top:-6px;left:2px;transform:rotate(-35deg)}
+.p4{top:-6px;right:2px;transform:rotate(35deg)}
+.css-ring-shadow{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+                 width:120px;height:16px;background:radial-gradient(ellipse,rgba(0,0,0,.5),transparent);
+                 border-radius:50%;animation:shadowPulse 6s linear infinite}
+.sparkle{position:absolute;color:var(--gold2);font-size:12px;
+         animation:sparkleFade 3s ease-in-out infinite;opacity:0;pointer-events:none}
+.s1{top:20%;left:15%;animation-delay:0s}
+.s2{top:15%;right:18%;animation-delay:.8s}
+.s3{bottom:25%;right:12%;animation-delay:1.6s;font-size:10px}
+.s4{bottom:30%;left:10%;animation-delay:2.4s}
+@keyframes heroSpin{from{transform:rotateY(0deg) rotateX(20deg)}to{transform:rotateY(360deg) rotateX(20deg)}}
+@keyframes gemPulse{0%,100%{box-shadow:0 0 20px rgba(136,204,255,.8),0 0 40px rgba(136,204,255,.4)}
+                    50%{box-shadow:0 0 30px rgba(136,204,255,1),0 0 60px rgba(136,204,255,.7)}}
+@keyframes shadowPulse{from{transform:translateX(-50%) scaleX(1)}50%{transform:translateX(-50%) scaleX(.7)}to{transform:translateX(-50%) scaleX(1)}}
+@keyframes sparkleFade{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:.9;transform:scale(1.2)}}
+.hv-label{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+          font-family:var(--font-mono);font-size:8px;color:rgba(240,192,64,.5);
+          letter-spacing:.18em;text-transform:uppercase;white-space:nowrap}
+.orbit-badge{position:absolute;top:16px;left:16px;padding:6px 12px;border-radius:8px;
+             background:rgba(10,2,4,.75);border:1px solid rgba(192,48,64,.35);
+             font-family:var(--font-mono);font-size:8px;color:#f0c070;
+             letter-spacing:.1em;text-transform:uppercase}
+/* Floating feature chips */
+.feat-chip{position:absolute;padding:8px 14px;border-radius:10px;
+           background:rgba(250,247,242,.95);border:1px solid var(--rule2);
+           font-size:10px;font-weight:500;backdrop-filter:blur(8px);
+           display:flex;align-items:center;gap:7px;white-space:nowrap;
+           box-shadow:0 8px 28px rgba(90,40,20,.18);color:var(--ink)}
+.feat-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--wine2)}
+.chip-1{top:30px;right:-10px;animation:float 3s ease-in-out infinite}
+.chip-2{bottom:120px;right:-20px;animation:float 3s ease-in-out infinite .8s}
+.chip-3{bottom:60px;left:-10px;animation:float 3s ease-in-out infinite 1.4s}
+
+/* ═══════ FEATURES ROW ═══════ */
+#features{padding:80px 40px;border-top:1px solid var(--rule);background:var(--bg2)}
+.section-label{font-family:var(--font-mono);font-size:8px;letter-spacing:.25em;
+               text-transform:uppercase;color:var(--wine);margin-bottom:10px}
+.section-title{font-family:var(--font-display);font-size:clamp(24px,3vw,38px);
+               margin-bottom:16px;line-height:1.2;color:var(--ink)}
+.features-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1200px;margin:0 auto}
+.fg{padding:26px;border-radius:var(--r);border:1px solid var(--rule);
+    background:var(--card);transition:all .3s;position:relative;overflow:hidden;
+    box-shadow:var(--shadow)}
+.fg::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
+           background:linear-gradient(90deg,var(--wine),var(--wine2));
+           transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.fg:hover{border-color:rgba(123,29,42,.3);transform:translateY(-4px);box-shadow:var(--shadow2)}
+.fg:hover::after{transform:scaleX(1)}
+.fg-icon{font-size:30px;margin-bottom:14px;display:block}
+.fg-title{font-family:var(--font-display);font-size:16px;margin-bottom:8px;color:var(--ink)}
+.fg-desc{font-size:12px;color:var(--body);line-height:1.7;margin-bottom:14px}
+.fg-action{font-family:var(--font-mono);font-size:10px;color:var(--wine2);letter-spacing:.08em;
+           padding:6px 12px;border-radius:6px;background:rgba(123,29,42,.07);
+           border:1px solid rgba(123,29,42,.2);display:inline-block;transition:all .2s}
+.fg:hover .fg-action{background:rgba(123,29,42,.14);border-color:var(--wine2)}
+
+/* ═══════ MAIN STUDIO ═══════ */
+#studio{padding:80px 40px;border-top:1px solid var(--rule);background:var(--bg)}
+.studio-hdr{max-width:1200px;margin:0 auto 48px;text-align:center}
+.studio-content{max-width:1200px;margin:0 auto}
+
+/* API KEY SETUP — removed */
+
+/* STUDIO LAYOUT */
+.studio-layout{display:grid;grid-template-columns:340px 1fr 300px;gap:20px;min-height:700px}
+
+/* UPLOAD PANEL */
+#upload-panel{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);
+              padding:0;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.panel-head{padding:18px 20px;border-bottom:1px solid var(--rule);
+            background:linear-gradient(135deg,var(--bg2),var(--bg));flex-shrink:0}
+.panel-head h3{font-family:var(--font-display);font-size:15px;color:var(--ink)}
+.panel-head p{font-size:11px;color:var(--muted);margin-top:2px}
+.panel-body{padding:20px;flex:1;overflow-y:auto}
+
+/* Dropzone */
+.dropzone{border:2px dashed rgba(123,29,42,.25);border-radius:12px;padding:28px 20px;
+          display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;
+          transition:all .3s;background:var(--bg2);position:relative;text-align:center}
+.dropzone:hover,.dropzone.drag-over{border-color:var(--wine);background:rgba(123,29,42,.05)}
+.dz-icon{width:52px;height:52px;border-radius:12px;background:rgba(123,29,42,.1);
+         border:1px solid rgba(123,29,42,.2);display:flex;align-items:center;
+         justify-content:center;font-size:22px}
+.dz-title{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px}
+.dz-sub{font-size:11px;color:var(--muted)}
+#img-input{display:none}
+
+/* Image preview */
+#img-preview-wrap{display:none;margin-top:16px;border-radius:10px;overflow:hidden;
+                  border:1px solid var(--rule2);position:relative;aspect-ratio:1;
+                  background:var(--bg3)}
+#img-preview{width:100%;height:100%;object-fit:contain;padding:8px}
+#img-overlay{position:absolute;inset:0;background:rgba(250,247,242,.7);display:none;
+             align-items:center;justify-content:center;flex-direction:column;gap:8px}
+.img-spinner{width:32px;height:32px;border:2px solid rgba(123,29,42,.2);
+             border-top-color:var(--wine2);border-radius:50%;animation:spin .8s linear infinite}
+
+/* Analysis results */
+#analysis-result{display:none;margin-top:16px}
+.ar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.detected-type{font-family:var(--font-display);font-size:18px;color:var(--wine2)}
+.confidence-badge{font-family:var(--font-mono);font-size:9px;padding:4px 10px;
+                  border-radius:100px;background:rgba(61,139,61,.1);
+                  border:1px solid rgba(61,139,61,.3);color:#3d7a3d;letter-spacing:.1em}
+.ar-desc{font-size:12px;color:var(--body);line-height:1.7;margin-bottom:14px;
+         padding:12px;background:rgba(123,29,42,.05);border-radius:8px;
+         border-left:3px solid var(--wine)}
+.props-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.prop-cell{background:var(--bg2);border-radius:8px;padding:9px;text-align:center;
+           border:1px solid var(--rule)}
+.prop-val{font-family:var(--font-display);font-size:17px;color:var(--wine2);display:block;line-height:1}
+.prop-lbl{font-size:9px;color:var(--muted);font-family:var(--font-mono);
+          text-transform:uppercase;letter-spacing:.1em;margin-top:3px;display:block}
+.comp-list{display:flex;flex-direction:column;gap:5px}
+.comp-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
+           background:var(--bg2);border:1px solid var(--rule);font-size:11px}
+.comp-icon{font-size:14px}
+.comp-name{flex:1;color:var(--ink)}
+.comp-cnt{font-family:var(--font-mono);font-size:9px;color:var(--muted)}
+
+/* Type override */
+#type-override-wrap{margin-top:14px;padding:14px;background:var(--bg2);
+                    border-radius:10px;border:1px solid var(--rule)}
+#type-override-wrap label{font-family:var(--font-mono);font-size:9px;
+                           color:var(--muted);text-transform:uppercase;
+                           letter-spacing:.12em;display:block;margin-bottom:6px}
+.override-row{display:grid;grid-template-columns:1fr auto;gap:8px}
+select.type-sel{background:var(--card);border:1px solid var(--rule2);
+                color:var(--ink);border-radius:8px;padding:8px 10px;font-size:12px;
+                font-family:var(--font-body);cursor:pointer;outline:none;width:100%}
+.btn-rebuild{background:linear-gradient(135deg,var(--wine),var(--wine2));color:#fff;
+             border:none;border-radius:8px;padding:8px 14px;font-size:11px;font-weight:600;
+             cursor:pointer;white-space:nowrap;font-family:var(--font-body)}
+.btn-rebuild:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(123,29,42,.3)}
+.override-note{font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5}
+
+/* ═══════ 3D VIEWER ═══════ */
+#viewer-panel{background:var(--v-bg);border:1px solid rgba(192,48,64,.25);
+              border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden;
+              position:relative;box-shadow:0 20px 60px rgba(80,10,20,.4)}
+#three-canvas{flex:1;width:100%;display:block;
+              background:radial-gradient(ellipse at 42% 38%,var(--v-bg3) 0%,var(--v-bg2) 50%,var(--v-bg) 100%)}
+.viewer-empty{flex:1;display:flex;flex-direction:column;align-items:center;
+              justify-content:center;gap:16px}
+.viewer-empty .big-icon{font-size:64px;opacity:.25}
+.viewer-empty p{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;
+                text-transform:uppercase;color:rgba(240,192,64,.3)}
+#viewer-load{position:absolute;inset:0;background:rgba(20,3,6,.82);backdrop-filter:blur(6px);
+             display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:10}
+.big-spin{width:44px;height:44px;border:2px solid rgba(192,48,64,.25);
+          border-top-color:#f0c040;border-radius:50%;animation:spin .9s linear infinite}
+.load-text{font-family:var(--font-mono);font-size:10px;color:rgba(240,192,64,.7);
+           letter-spacing:.12em;text-transform:uppercase}
+.prog-track{width:200px;height:2px;background:rgba(192,48,64,.18);border-radius:1px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--wine2),#f0c040);
+           animation:prog 2s ease-in-out infinite}
+/* Viewer controls */
+.viewer-controls{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+                 display:flex;align-items:center;gap:4px;background:rgba(10,2,4,.88);
+                 border:1px solid rgba(192,48,64,.3);border-radius:100px;
+                 padding:7px 14px;backdrop-filter:blur(12px);z-index:5}
+.vc-btn{background:none;border:none;color:rgba(240,192,64,.45);cursor:pointer;font-size:10px;
+        padding:4px 8px;border-radius:5px;transition:color .2s;font-family:var(--font-mono);
+        white-space:nowrap;letter-spacing:.06em}
+.vc-btn:hover,.vc-btn.active{color:#f0c040}
+.vc-sep{width:1px;height:12px;background:rgba(192,48,64,.25)}
+.cam-tip{position:absolute;top:12px;right:12px;font-family:var(--font-mono);
+         font-size:8px;color:rgba(240,192,64,.3);text-align:right;line-height:1.9;
+         letter-spacing:.06em;text-transform:uppercase;pointer-events:none}
+/* Viewer stats badge */
+#viewer-stats{position:absolute;top:12px;left:12px;display:none;flex-direction:column;gap:4px;z-index:5}
+.vs-badge{font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:6px;
+          background:rgba(10,2,4,.85);border:1px solid rgba(192,48,64,.3);color:#f0c070;
+          letter-spacing:.08em}
+
+/* ═══════ RIGHT PANEL — CUSTOMIZER ═══════ */
+#custom-panel{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);
+              display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow)}
+/* Tabs */
+.custom-tabs{display:flex;border-bottom:1px solid var(--rule);flex-shrink:0}
+.ctab{flex:1;padding:12px 6px;font-size:10px;font-weight:500;color:var(--muted);
+      border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;
+      transition:all .2s;font-family:var(--font-body);letter-spacing:.03em;
+      display:flex;flex-direction:column;align-items:center;gap:3px}
+.ctab .ctab-icon{font-size:14px}
+.ctab.on{color:var(--wine2);border-bottom-color:var(--wine2)}
+.custom-body{flex:1;overflow-y:auto;padding:16px}
+.ctab-pane{display:none}
+.ctab-pane.on{display:block}
+.clbl{font-family:var(--font-mono);font-size:8px;letter-spacing:.2em;text-transform:uppercase;
+      color:var(--muted);margin-bottom:10px}
+
+/* Material chip bar */
+.mat-bar{padding:10px 16px;border-bottom:1px solid var(--rule);flex-shrink:0;
+         display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--bg2)}
+.mchip{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:100px;
+       background:rgba(123,29,42,.08);border:1px solid rgba(123,29,42,.18);
+       font-size:10px;color:var(--ink)}
+.mchip-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.1)}
+.upd-pill{display:none;align-items:center;gap:5px;margin-left:auto;padding:4px 9px;
+          border-radius:100px;background:rgba(123,29,42,.1);font-family:var(--font-mono);
+          font-size:8px;color:var(--wine2);letter-spacing:.08em}
+.upd-pill.show{display:flex}
+.mini-spin{width:8px;height:8px;border:1px solid rgba(123,29,42,.2);
+           border-top-color:var(--wine2);border-radius:50%;animation:spin .6s linear infinite}
+
+/* Swatch row */
+.sw-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.sw-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.sw-circle{width:28px;height:28px;border-radius:50%;border:2px solid transparent;
+           transition:all .22s;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.sw-circle:hover,.sw-circle.on{border-color:var(--wine2);transform:scale(1.22);
+                                box-shadow:0 0 14px rgba(123,29,42,.35)}
+.sw-item.locked .sw-circle{opacity:.3;cursor:not-allowed;filter:grayscale(1)}
+.sw-item.locked .sw-name{opacity:.4}
+.sw-name{font-family:var(--font-mono);font-size:7px;color:var(--muted);
+         text-align:center;max-width:40px;line-height:1.3}
+/* Gem grid */
+.gem-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gem-card{display:flex;align-items:center;gap:8px;padding:10px;border-radius:9px;
+          border:1px solid var(--rule);cursor:pointer;transition:all .2s;
+          background:var(--bg2)}
+.gem-card:hover{border-color:rgba(123,29,42,.32);background:rgba(123,29,42,.04)}
+.gem-card.on{border-color:var(--wine2);background:rgba(123,29,42,.08)}
+.gem-card.locked{opacity:.3;cursor:not-allowed;filter:grayscale(.8);pointer-events:none}
+.gem-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;
+          justify-content:center;font-size:14px;border:1px solid rgba(0,0,0,.06);flex-shrink:0}
+.gem-name{font-size:10px;color:var(--ink);display:block;line-height:1.2}
+.gem-dots{display:flex;gap:2px;margin-top:3px}
+.gd{width:4px;height:4px;border-radius:50%}
+.gd.on{background:var(--wine)}.gd.off{background:rgba(123,29,42,.15)}
+/* Info card */
+.info-card{background:var(--bg2);border:1px solid var(--rule);
+           border-radius:9px;padding:12px;margin-top:12px}
+.ic-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.ic-row:last-child{margin-bottom:0}
+.ic-k{font-size:10px;color:var(--muted)}
+.ic-v{font-family:var(--font-mono);font-size:10px;color:var(--wine2)}
+
+/* ─── BUDGET TIERS ─── */
+.bgt-row{display:flex;align-items:center;gap:12px;padding:12px 14px;
+         border-radius:10px;border:1px solid var(--rule);cursor:pointer;
+         transition:all .2s;margin-bottom:7px;background:var(--bg2);position:relative;
+         overflow:hidden}
+.bgt-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+                 background:var(--wine);transform:scaleY(0);transition:transform .2s}
+.bgt-row:hover{border-color:rgba(123,29,42,.32);box-shadow:0 3px 12px rgba(123,29,42,.1)}
+.bgt-row.on{border-color:var(--wine2);background:rgba(123,29,42,.06);
+            box-shadow:0 4px 16px rgba(123,29,42,.15)}
+.bgt-row.on::before{transform:scaleY(1)}
+.bgt-row-main{display:flex;align-items:center;justify-content:space-between;width:100%}
+.bgt-left{display:flex;align-items:center;gap:10px}
+.bgt-icon{font-size:18px}
+.bgt-info .bgt-name{font-size:12px;color:var(--ink);font-weight:600;display:block}
+.bgt-info .bgt-range{font-size:10px;color:var(--muted);font-family:var(--font-mono)}
+.bgt-sym{font-family:var(--font-mono);font-size:11px;color:var(--wine2);letter-spacing:.06em}
+
+/* Budget result panel */
+#bgt-result{margin-top:16px;display:none}
+.bgt-result-header{font-family:var(--font-display);font-size:14px;color:var(--ink);
+                   margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.bgt-result-section{margin-bottom:14px}
+.bgt-section-label{font-family:var(--font-mono);font-size:8px;letter-spacing:.18em;
+                   text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.bgt-options-row{display:flex;flex-wrap:wrap;gap:8px}
+.bgt-option{display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:8px;
+            border:2px solid var(--rule);cursor:pointer;transition:all .2s;background:var(--bg2);
+            font-size:11px;color:var(--ink)}
+.bgt-option:hover{border-color:var(--wine);background:rgba(123,29,42,.06)}
+.bgt-option.sel{border-color:var(--wine2);background:rgba(123,29,42,.1);
+                box-shadow:0 3px 10px rgba(123,29,42,.18)}
+.bgt-option-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,.1)}
+.bgt-apply-bar{display:flex;align-items:center;justify-content:space-between;margin-top:12px;
+               padding:12px 14px;background:var(--bg2);border-radius:9px;border:1px solid var(--rule)}
+.bgt-apply-info{font-size:11px;color:var(--muted)}
+.bgt-apply-info strong{color:var(--wine2)}
+
+.sug-box{background:rgba(123,29,42,.05);border:1px solid rgba(123,29,42,.18);
+         border-radius:9px;padding:12px;margin-top:12px}
+.sug-box h4{font-size:11px;color:var(--ink);margin-bottom:9px}
+.sug-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.sug-lbl{font-size:10px;color:var(--muted)}
+.sug-tag{display:inline-flex;padding:3px 9px;border-radius:100px;
+         background:rgba(123,29,42,.1);border:1px solid rgba(123,29,42,.25);
+         color:var(--wine2);font-family:var(--font-mono);font-size:8px;
+         letter-spacing:.06em;text-transform:uppercase}
+/* Export section */
+.exp-section{padding:14px 16px;border-top:1px solid var(--rule);flex-shrink:0;background:var(--bg2)}
+.exp-row{display:flex;gap:8px;margin-top:8px}
+.exp-note{font-size:9px;color:var(--muted);margin-top:6px;line-height:1.5;
+          font-family:var(--font-mono);letter-spacing:.04em}
+
+/* ═══════ HOW IT WORKS ═══════ */
+#how{padding:80px 40px;border-top:1px solid var(--rule);
+     background:linear-gradient(180deg,var(--bg3),var(--bg2))}
+.steps-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;max-width:1200px;
+            margin:40px auto 0;position:relative}
+.steps-flow::before{content:'';position:absolute;top:30px;left:10%;right:10%;height:1px;
+                    background:linear-gradient(90deg,transparent,var(--rule2),var(--rule2),transparent)}
+.step-item{padding:30px 20px;text-align:center;position:relative}
+.step-num{width:60px;height:60px;border-radius:50%;border:2px solid rgba(123,29,42,.25);
+          background:var(--card);display:flex;align-items:center;justify-content:center;
+          margin:0 auto 20px;font-family:var(--font-display);font-size:22px;color:var(--wine2);
+          position:relative;z-index:1;box-shadow:0 4px 16px rgba(123,29,42,.15)}
+.step-title{font-family:var(--font-display);font-size:15px;margin-bottom:8px;color:var(--ink)}
+.step-desc{font-size:12px;color:var(--body);line-height:1.7;margin-bottom:14px}
+.step-try{background:linear-gradient(135deg,var(--wine),var(--wine2));color:#fff;
+          border:none;border-radius:8px;padding:8px 16px;font-size:11px;font-weight:600;
+          cursor:pointer;font-family:var(--font-body);transition:all .2s;letter-spacing:.02em;
+          box-shadow:0 4px 14px rgba(123,29,42,.25)}
+.step-try:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(123,29,42,.38)}
+
+/* ═══════ ALERT TOAST ═══════ */
+#toast{position:fixed;bottom:28px;right:28px;padding:12px 20px;border-radius:10px;
+       font-size:12px;z-index:9998;display:none;max-width:340px;line-height:1.5;
+       backdrop-filter:blur(12px);animation:slideup .3s ease-out;font-family:var(--font-body)}
+#toast.ok{background:rgba(245,253,245,.97);border:1px solid #5a9a5a;color:#2d5a2d;
+          box-shadow:0 8px 24px rgba(60,120,60,.2)}
+#toast.err{background:rgba(253,245,245,.97);border:1px solid #c04040;color:#6a1a1a;
+           box-shadow:0 8px 24px rgba(160,40,40,.2)}
+#toast.info{background:rgba(245,248,253,.97);border:1px solid #4070c0;color:#1a356a;
+            box-shadow:0 8px 24px rgba(40,80,160,.2)}
+
+/* ═══════ FOOTER ═══════ */
+footer{padding:40px;border-top:1px solid var(--rule);background:var(--bg2);
+       font-size:12px;color:var(--muted)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes prog{0%{width:0;margin-left:0}60%{width:60%}100%{width:0;margin-left:100%}}
+@keyframes slideup{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease-out}
+
+/* ═══════ AI DESIGN SUGGESTIONS ═══════ */
+#ai-design-bar{background:linear-gradient(135deg,rgba(123,29,42,.06),rgba(184,134,11,.06));
+               border:1px solid rgba(123,29,42,.2);border-radius:12px;padding:16px 20px;
+               margin-bottom:20px;display:none}
+#ai-design-bar.visible{display:block}
+.adb-title{font-family:var(--font-display);font-size:14px;color:var(--ink);margin-bottom:4px;
+           display:flex;align-items:center;gap:8px}
+.adb-sub{font-size:11px;color:var(--muted);margin-bottom:12px}
+.adb-btns{display:flex;gap:8px;flex-wrap:wrap}
+.adb-btn{padding:7px 14px;border-radius:100px;border:1px solid rgba(123,29,42,.28);
+         background:rgba(123,29,42,.07);color:var(--wine2);font-size:10px;font-weight:600;
+         cursor:pointer;transition:all .2s;font-family:var(--font-body)}
+.adb-btn:hover{background:rgba(123,29,42,.16);border-color:var(--wine2);transform:translateY(-1px)}
+.adb-btn.loading{opacity:.6;pointer-events:none}
+#adb-result{display:none;margin-top:14px;padding:12px;background:var(--bg2);border-radius:9px;
+            border:1px solid var(--rule);font-size:11px;color:var(--body);line-height:1.7}
+#adb-result strong{color:var(--wine2)}
+
+/* ═══════ VIRTUAL TRY-ON ═══════ */
+#tryon-section{padding:80px 40px;border-top:1px solid var(--rule);background:var(--bg)}
+.tryon-container{max-width:1200px;margin:0 auto}
+.tryon-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;margin-top:32px}
+#tryon-video-wrap{position:relative;border-radius:16px;overflow:hidden;background:var(--v-bg);
+                  border:1px solid rgba(192,48,64,.25);aspect-ratio:4/3}
+#tryon-video{width:100%;height:100%;object-fit:cover;display:block}
+#tryon-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#tryon-overlay-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+                   flex-direction:column;gap:12px;background:rgba(26,5,8,.92)}
+#tryon-overlay-msg .big-icon{font-size:52px;opacity:.5}
+#tryon-overlay-msg p{font-family:var(--font-mono);font-size:10px;color:rgba(240,192,64,.5);
+                     text-align:center;letter-spacing:.12em;text-transform:uppercase;max-width:220px;line-height:1.7}
+.tryon-controls{display:flex;flex-direction:column;gap:16px}
+.tryon-info-card{background:var(--card);border:1px solid var(--rule);border-radius:12px;
+                 padding:20px;box-shadow:var(--shadow)}
+.tryon-info-card h4{font-family:var(--font-display);font-size:16px;color:var(--ink);margin-bottom:6px}
+.tryon-info-card p{font-size:12px;color:var(--body);line-height:1.7;margin-bottom:14px}
+.tryon-mode-row{display:flex;gap:8px;margin-bottom:14px}
+.tryon-mode-btn{flex:1;padding:9px 12px;border-radius:9px;border:2px solid var(--rule);
+                background:var(--bg2);color:var(--muted);font-size:11px;font-weight:600;
+                cursor:pointer;transition:all .2s;font-family:var(--font-body)}
+.tryon-mode-btn.on{border-color:var(--wine2);color:var(--wine2);background:rgba(123,29,42,.07)}
+.tryon-status{font-family:var(--font-mono);font-size:9px;padding:6px 12px;border-radius:6px;
+              background:var(--bg2);border:1px solid var(--rule);color:var(--muted);letter-spacing:.08em;
+              margin-top:8px;display:flex;align-items:center;gap:6px}
+.tryon-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.tryon-dot.active{background:#3d8b3d;box-shadow:0 0 5px rgba(61,139,61,.5)}
+.tryon-scale{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)}
+.tryon-scale input{flex:1}
+
+/* ═══════ PRICE ESTIMATION ═══════ */
+#price-section{padding:16px;border-top:1px solid var(--rule);flex-shrink:0;background:var(--card)}
+.price-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.price-header h4{font-family:var(--font-display);font-size:14px;color:var(--ink)}
+.price-badge{font-family:var(--font-mono);font-size:8px;padding:3px 8px;border-radius:100px;
+             background:rgba(61,139,61,.1);border:1px solid rgba(61,139,61,.3);color:#3d7a3d;letter-spacing:.08em}
+.price-display{background:linear-gradient(135deg,rgba(123,29,42,.06),rgba(184,134,11,.04));
+               border:1px solid rgba(123,29,42,.18);border-radius:10px;padding:14px;
+               display:flex;justify-content:space-between;align-items:center}
+.price-main{font-family:var(--font-display);font-size:18px;color:var(--wine2)}
+.price-range{font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-top:2px}
+.price-breakdown{font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:.05em}
+.price-breakdown span{display:block;margin-top:2px;color:var(--body)}
+
+/* ═══════ PRO CAD MODE ═══════ */
+.mode-toggle-bar{display:flex;align-items:center;justify-content:space-between;
+                 padding:10px 20px;background:var(--bg2);border:1px solid var(--rule);
+                 border-radius:10px;margin-bottom:20px}
+.mode-toggle-label{font-size:12px;color:var(--muted);font-family:var(--font-mono);
+                   letter-spacing:.1em;text-transform:uppercase}
+.mode-toggle-btns{display:flex;gap:4px;background:var(--bg3);border-radius:8px;padding:3px}
+.mode-btn{padding:6px 16px;border-radius:6px;border:none;background:transparent;
+          font-size:10px;font-weight:600;cursor:pointer;color:var(--muted);
+          font-family:var(--font-body);transition:all .2s}
+.mode-btn.on{background:white;color:var(--wine2);box-shadow:0 2px 8px rgba(123,29,42,.15)}
+#pro-cad-panel{display:none}
+#pro-cad-panel.visible{display:block}
+.cad-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.cad-control{background:var(--bg2);border:1px solid var(--rule);border-radius:9px;padding:12px}
+.cad-label{font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:.15em;
+           text-transform:uppercase;display:block;margin-bottom:8px}
+.cad-val{font-family:var(--font-display);font-size:16px;color:var(--wine2);display:block;
+         margin-bottom:6px}
+.cad-control input[type=range]{width:100%;accent-color:var(--wine2)}
+.cad-apply{width:100%;margin-top:12px;padding:9px;background:linear-gradient(135deg,var(--wine),var(--wine2));
+           color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;
+           font-family:var(--font-body)}
+
+/* ═══════ STYLE TRANSFER ═══════ */
+#style-transfer-wrap{margin-top:14px;display:none}
+#style-transfer-wrap.visible{display:block}
+.st-header{font-family:var(--font-mono);font-size:8px;letter-spacing:.2em;text-transform:uppercase;
+           color:var(--muted);margin-bottom:10px}
+.st-styles{display:flex;gap:6px;flex-wrap:wrap}
+.st-btn{padding:6px 12px;border-radius:100px;border:1px solid var(--rule2);
+        background:var(--bg2);color:var(--body);font-size:10px;cursor:pointer;
+        transition:all .2s;font-family:var(--font-body)}
+.st-btn:hover{border-color:var(--wine2);color:var(--wine2);background:rgba(123,29,42,.06)}
+.st-btn.on{border-color:var(--wine2);background:rgba(123,29,42,.1);color:var(--wine2);font-weight:600}
+#st-result{display:none;margin-top:10px;padding:10px;font-size:11px;color:var(--body);
+           background:rgba(184,134,11,.06);border:1px solid rgba(184,134,11,.2);
+           border-radius:8px;line-height:1.7}
+
+/* ═══════ AI EXPLANATION PANEL ═══════ */
+#ai-explain-panel{display:none;margin-top:14px;padding:14px;
+                  background:linear-gradient(135deg,rgba(123,29,42,.04),rgba(26,5,8,.02));
+                  border:1px solid rgba(123,29,42,.18);border-radius:10px}
+#ai-explain-panel.visible{display:block}
+.explain-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.explain-icon{width:28px;height:28px;border-radius:8px;background:rgba(123,29,42,.1);
+              display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.explain-title{font-family:var(--font-display);font-size:13px;color:var(--ink)}
+.explain-list{display:flex;flex-direction:column;gap:7px}
+.explain-item{display:flex;gap:8px;align-items:flex-start;font-size:11px;color:var(--body);line-height:1.6}
+.explain-dot{width:4px;height:4px;border-radius:50%;background:var(--wine);flex-shrink:0;margin-top:5px}
+.explain-item b{color:var(--wine2)}
+
+/* ═══════ PERF STATS ═══════ */
+.vs-badge.render{border-color:rgba(184,134,11,.4);color:#d4a017}
+
+/* ═══════ RESPONSIVE ═══════ */
+@media(max-width:1100px){
+  .studio-layout{grid-template-columns:1fr 1fr;grid-template-rows:auto}
+  #viewer-panel{grid-column:1/3;min-height:400px}
+  #upload-panel{grid-column:1/2}
+  #custom-panel{grid-column:2/3}
+}
+@media(max-width:768px){
+  .hero-grid,.features-grid,.steps-flow,.tryon-grid{grid-template-columns:1fr}
+  .studio-layout{grid-template-columns:1fr}
+  #viewer-panel{grid-column:auto}
+  #upload-panel,#custom-panel{grid-column:auto}
+  #site-nav .nav-links{display:none}
+  header{padding:12px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav id="site-nav">
+  <div class="nav-logo">
+    <div class="nav-gem">💎</div>
+    <div><div class="nav-name">Gemcraft AI</div><div class="nav-sub">2D → 3D Jewelry Studio</div></div>
+  </div>
+  <div class="nav-links">
+    <a onclick="goTo('#hero')">Home</a>
+    <a onclick="goTo('#features')">Features</a>
+    <a onclick="goTo('#studio')">Studio</a>
+    <a onclick="goTo('#tryon-section')">Try-On ✨</a>
+    <a onclick="goTo('#how')">How It Works</a>
+  </div>
+  <button class="nav-cta" onclick="goTo('#studio')">Open Studio →</button>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid">
+    <div class="hero-text">
+      <div class="badge"><span>✦</span> AI-Powered · Real-Time 3D</div>
+      <h1>Transform Any Jewelry Photo Into a <em>3D Masterpiece</em></h1>
+      <p>Upload a flat 2D image — ring, bracelet, pendant, earring or brooch — and watch Claude AI analyze every detail to reconstruct a fully interactive 3D model. Then apply AI design styles, see live price estimates, try it on with AR, or tweak parameters in Pro CAD Mode.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="goTo('#studio')">Start Designing ✦</button>
+        <button class="btn-outline" onclick="goTo('#how')">How It Works</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hs"><span class="hs-val">5+</span><span class="hs-lbl">Jewelry Types</span></div>
+        <div class="hs"><span class="hs-val">6</span><span class="hs-lbl">Metal Options</span></div>
+        <div class="hs"><span class="hs-val">8</span><span class="hs-lbl">Gemstones</span></div>
+        <div class="hs"><span class="hs-val">AR</span><span class="hs-lbl">Try-On</span></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hv-frame">
+        <!-- Pure CSS 3D ring — zero GPU / WebGL cost -->
+        <div class="css-ring-scene">
+          <div class="css-ring-wrap">
+            <div class="css-ring">
+              <div class="css-ring-band"></div>
+              <div class="css-ring-gem-holder">
+                <div class="css-ring-gem"></div>
+                <div class="css-prong p1"></div>
+                <div class="css-prong p2"></div>
+                <div class="css-prong p3"></div>
+                <div class="css-prong p4"></div>
+              </div>
+            </div>
+          </div>
+          <div class="css-ring-shadow"></div>
+          <!-- Sparkle dots -->
+          <div class="sparkle s1">✦</div>
+          <div class="sparkle s2">✦</div>
+          <div class="sparkle s3">◆</div>
+          <div class="sparkle s4">✦</div>
+        </div>
+        <div class="orbit-badge">💎 Interactive 3D in Studio</div>
+        <div class="hv-label">Scroll down to open the studio</div>
+      </div>
+      <div class="feat-chip chip-1"><span class="dot"></span> AR Virtual Try-On</div>
+      <div class="feat-chip chip-2"><span class="dot"></span> Live Price Estimate</div>
+      <div class="feat-chip chip-3"><span class="dot"></span> AI Design Styles</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section id="features">
+  <div style="max-width:1200px;margin:0 auto;text-align:center">
+    <div class="section-label">How It Powers Your Work</div>
+    <h2 class="section-title">Every Feature, Fully Connected</h2>
+    <p style="color:var(--smoke);font-size:14px;max-width:560px;margin:0 auto 40px">Click any card to jump straight into that part of the studio and try it live.</p>
+    <div class="features-grid" style="grid-template-columns:repeat(3,1fr)">
+
+      <!-- Card 1: AI Image Analysis -->
+      <div class="fg" onclick="goTo('#studio');setTimeout(()=>$('img-input').click(),600)" style="cursor:pointer">
+        <div class="fg-icon">🧠</div>
+        <div class="fg-title">AI Image Analysis</div>
+        <div class="fg-desc">Upload any jewelry photo and Claude's vision model reads the actual pixels — it identifies ring vs bracelet vs pendant, counts the gemstones, detects the metal color, and writes a plain-English description of your piece.</div>
+        <div class="fg-action">📸 Upload a photo →</div>
+      </div>
+
+      <!-- Card 2: 3D Model Generation -->
+      <div class="fg" onclick="goTo('#studio');setTimeout(()=>demo('ring'),800)" style="cursor:pointer">
+        <div class="fg-icon">🔷</div>
+        <div class="fg-title">Instant 3D Generation</div>
+        <div class="fg-desc">The AI result drives a parametric mesh builder — ring bands, prong clusters, bail loops, tennis stone lines, brooch frames — all constructed in Three.js and rendered in your browser in seconds. No backend, no waiting.</div>
+        <div class="fg-action">💍 Try a demo ring →</div>
+      </div>
+
+      <!-- Card 3: AI Design Suggestions -->
+      <div class="fg" onclick="goTo('#studio');setTimeout(()=>{demo('ring').then(()=>setTimeout(()=>document.querySelector('.adb-btn')?.click(),1200))},800)" style="cursor:pointer">
+        <div class="fg-icon">✦</div>
+        <div class="fg-title">AI Design Suggestions</div>
+        <div class="fg-desc">One click transforms your design — "Make it Premium" switches to Diamond + Platinum, "Bridal" picks rose gold with extra gem count, "Mughal" evokes royal heritage. AI explains every choice.</div>
+        <div class="fg-action">✦ Try AI Styling →</div>
+      </div>
+
+      <!-- Card 4: Virtual Try-On -->
+      <div class="fg" onclick="goTo('#tryon-section')" style="cursor:pointer">
+        <div class="fg-icon">📷</div>
+        <div class="fg-title">Virtual Try-On (AR)</div>
+        <div class="fg-desc">Point your camera at your hand and see the 3D jewelry overlay live — ring on finger, pendant at neck, earring by cheek. Real-time skin-tone detection, fully in-browser, no data sent anywhere.</div>
+        <div class="fg-action">📷 Try it on yourself →</div>
+      </div>
+
+      <!-- Card 5: Live Price Estimation -->
+      <div class="fg" onclick="goTo('#studio');setTimeout(()=>demo('ring'),800)" style="cursor:pointer">
+        <div class="fg-icon">💰</div>
+        <div class="fg-title">Live Price Estimation</div>
+        <div class="fg-desc">Every material change instantly recalculates the estimated price — metal weight, gemstone carats, making charges — and shows you a realistic ₹ range. Makes the project industry-ready for jewellers.</div>
+        <div class="fg-action">💰 See price estimate →</div>
+      </div>
+
+      <!-- Card 6: Pro CAD Mode + Export -->
+      <div class="fg" onclick="goTo('#studio');setTimeout(()=>{demo('ring').then(()=>setTimeout(()=>setMode('pro'),1200))},800)" style="cursor:pointer">
+        <div class="fg-icon">⚙</div>
+        <div class="fg-title">Pro CAD Mode + Export</div>
+        <div class="fg-desc">Switch to Pro Mode and control ring diameter, gem size, prong count, and band thickness with sliders. Then export as GLB for Blender/Unity or STL for 3D printing — geometry pre-scaled in mm.</div>
+        <div class="fg-action">⚙ Open Pro Mode →</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STUDIO ═══ -->
+<section id="studio">
+  <div class="studio-hdr">
+    <div class="section-label">The Studio</div>
+    <h2 class="section-title">2D → 3D Jewelry Generator</h2>
+    <p style="color:var(--smoke);font-size:14px;max-width:560px;margin:0 auto">
+      Upload any jewelry photo — add a free Hugging Face key for AI-powered recognition, or use instant pixel analysis. No account required.
+    </p>
+  </div>
+  <div class="studio-content">
+
+    <!-- STUDIO LAYOUT: Upload | Viewer | Customizer -->
+    <div class="studio-layout">
+
+      <!-- LEFT: UPLOAD + ANALYSIS -->
+      <div id="upload-panel">
+        <div class="panel-head">
+          <h3>📸 Upload Image</h3>
+          <p>Drop any jewelry photo — AI will analyze and build the 3D model</p>
+        </div>
+        <div class="panel-body">
+          <!-- Dropzone -->
+          <div class="dropzone" id="dropzone">
+            <div class="dz-icon">📷</div>
+            <div class="dz-title">Drop jewelry image here</div>
+            <div class="dz-sub">PNG · JPG · WEBP · up to 20MB</div>
+            <button class="btn-primary" style="font-size:11px;padding:8px 18px"
+              onclick="event.stopPropagation();$('img-input').click()">Browse Files</button>
+            <input type="file" id="img-input" accept="image/png,image/jpeg,image/webp,image/gif">
+          </div>
+
+          <!-- Quick demo buttons -->
+          <div style="margin-top:14px">
+            <div style="font-family:var(--font-mono);font-size:8px;color:var(--smoke);
+                        letter-spacing:.2em;text-transform:uppercase;text-align:center;margin-bottom:8px">
+              Quick Demo (no image needed)
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+              <button class="btn-outline" style="font-size:10px;padding:7px 12px" onclick="demo('ring')">💍 Ring</button>
+              <button class="btn-outline" style="font-size:10px;padding:7px 12px" onclick="demo('pendant')">📿 Pendant</button>
+              <button class="btn-outline" style="font-size:10px;padding:7px 12px" onclick="demo('earring')">✨ Earring</button>
+              <button class="btn-outline" style="font-size:10px;padding:7px 12px" onclick="demo('bracelet')">💫 Bracelet</button>
+              <button class="btn-outline" style="font-size:10px;padding:7px 12px" onclick="demo('brooch')">🌸 Brooch</button>
+            </div>
+          </div>
+
+          <!-- HF API Key (compact, inline) -->
+          <div id="hf-key-bar" style="margin-top:12px;padding:12px 14px;background:var(--bg2);border-radius:10px;border:1px solid var(--rule)">
+            <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-bottom:7px">🤗 Hugging Face API Key <span style="color:var(--wine2)">(for smarter AI analysis)</span></div>
+            <div style="display:flex;gap:8px">
+              <input type="password" id="hf-key-input" placeholder="hf_..." spellcheck="false"
+                style="flex:1;background:var(--card);border:1px solid var(--rule2);color:var(--ink);
+                       border-radius:8px;padding:8px 12px;font-size:11px;font-family:var(--font-mono);
+                       outline:none;transition:border-color .2s"
+                onfocus="this.style.borderColor='var(--wine)'" onblur="this.style.borderColor=''"
+                oninput="saveHFKey(this.value)">
+              <div id="hf-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;margin-top:10px"></div>
+            </div>
+            <div style="font-size:9px;color:var(--muted);margin-top:5px;font-family:var(--font-mono)">
+              Free at <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:var(--wine2);text-decoration:none">huggingface.co/settings/tokens</a> · stored in browser only
+            </div>
+          </div>
+
+          <!-- AI Design Suggestions Bar -->
+          <div id="ai-design-bar">
+
+            <div class="adb-title">✦ AI Design Assistant</div>
+            <div class="adb-sub">Apply an AI design direction to the current 3D model</div>
+            <div class="adb-btns">
+              <button class="adb-btn" onclick="applyDesignStyle('premium')">👑 Make it Premium</button>
+              <button class="adb-btn" onclick="applyDesignStyle('minimalist')">◻ Minimalist</button>
+              <button class="adb-btn" onclick="applyDesignStyle('bridal')">🌸 Bridal Style</button>
+              <button class="adb-btn" onclick="applyDesignStyle('vintage')">🏺 Vintage</button>
+              <button class="adb-btn" onclick="applyDesignStyle('mughal')">🕌 Mughal</button>
+            </div>
+            <div id="adb-result"></div>
+          </div>
+
+          <!-- AI Explanation Panel -->
+          <div id="ai-explain-panel">
+            <div class="explain-header">
+              <div class="explain-icon">🧠</div>
+              <div class="explain-title">AI Transparency — Why This Design?</div>
+            </div>
+            <div class="explain-list" id="explain-list"></div>
+          </div>
+
+          <!-- Style Transfer -->
+          <div id="style-transfer-wrap">
+            <div class="st-header">Style Transfer</div>
+            <div class="st-styles">
+              <button class="st-btn" onclick="applyStyleTransfer('mughal')">🕌 Mughal</button>
+              <button class="st-btn" onclick="applyStyleTransfer('art_deco')">◇ Art Deco</button>
+              <button class="st-btn" onclick="applyStyleTransfer('modern')">▢ Modern</button>
+              <button class="st-btn" onclick="applyStyleTransfer('boho')">🌿 Boho</button>
+              <button class="st-btn" onclick="applyStyleTransfer('royal')">👑 Royal</button>
+            </div>
+            <div id="st-result"></div>
+          </div>
+
+
+          <!-- Image preview -->
+          <div id="img-preview-wrap" style="display:none;margin-top:16px;border-radius:10px;overflow:hidden;border:1px solid var(--rule2);position:relative;aspect-ratio:1;background:var(--bg3)">
+            <img id="img-preview" alt="Jewelry photo" style="width:100%;height:100%;object-fit:contain;padding:8px">
+            <div id="img-overlay" style="position:absolute;inset:0;background:rgba(250,247,242,.7);display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px">
+              <div class="img-spinner"></div>
+              <div id="img-overlay-text" style="font-family:var(--font-mono);font-size:9px;color:rgba(200,150,26,.7);letter-spacing:.12em">ANALYZING…</div>
+            </div>
+          </div>
+
+          <!-- Analysis results -->
+          <div id="analysis-result">
+            <div class="ar-header">
+              <div class="detected-type" id="ar-type">Ring</div>
+              <div class="confidence-badge" id="ar-conf">95% MATCH</div>
+            </div>
+            <div class="ar-desc" id="ar-desc">AI analysis description will appear here.</div>
+            <div class="props-grid">
+              <div class="prop-cell"><span class="prop-val" id="ar-gems">1</span><span class="prop-lbl">Gems</span></div>
+              <div class="prop-cell"><span class="prop-val" id="ar-metal">High</span><span class="prop-lbl">Metal %</span></div>
+              <div class="prop-cell"><span class="prop-val" id="ar-sym">90%</span><span class="prop-lbl">Symmetry</span></div>
+              <div class="prop-cell"><span class="prop-val" id="ar-style">Classic</span><span class="prop-lbl">Style</span></div>
+            </div>
+            <div class="clbl">Components</div>
+            <div class="comp-list" id="comp-list"></div>
+            <div id="type-override-wrap">
+              <label>Override Detected Type</label>
+              <div class="override-row">
+                <select class="type-sel" id="type-sel">
+                  <option value="ring">💍 Ring</option>
+                  <option value="pendant">📿 Pendant</option>
+                  <option value="earring">✨ Earring</option>
+                  <option value="bracelet">💫 Bracelet</option>
+                  <option value="brooch">🌸 Brooch</option>
+                  <option value="necklace">🔗 Necklace</option>
+                </select>
+                <button class="btn-rebuild" onclick="rebuildAs()">Rebuild</button>
+              </div>
+              <div class="override-note">AI got it wrong? Pick the right type above and hit Rebuild.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER: 3D VIEWER -->
+      <div id="viewer-panel">
+        <div class="viewer-empty" id="viewer-empty">
+          <div class="big-icon">🔷</div>
+          <p>3D model will appear here</p>
+          <p style="font-size:9px;opacity:.6">Upload an image or click a demo above</p>
+        </div>
+        <div id="viewer-load">
+          <div class="big-spin"></div>
+          <div class="load-text" id="load-text">Building 3D model…</div>
+          <div class="prog-track"><div class="prog-fill"></div></div>
+        </div>
+        <canvas id="three-canvas" style="display:none;width:100%;height:100%;flex:1"></canvas>
+        <div class="cam-tip" id="cam-tip" style="display:none">Drag · Rotate<br>Scroll · Zoom</div>
+        <div class="viewer-controls" id="viewer-controls" style="display:none">
+          <button class="vc-btn active" id="vc-auto" onclick="toggleAuto()">⟳ Auto</button>
+          <div class="vc-sep"></div>
+          <button class="vc-btn" onclick="resetCam()">⊡ Reset</button>
+          <div class="vc-sep"></div>
+          <button class="vc-btn" id="vc-wire" onclick="toggleWire()">⊞ Wire</button>
+        </div>
+        <div id="viewer-stats">
+          <div class="vs-badge" id="vs-type">Ring</div>
+          <div class="vs-badge" id="vs-verts">0 verts</div>
+          <div class="vs-badge render" id="vs-render">— ms</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: CUSTOMIZER -->
+      <div id="custom-panel">
+        <div class="panel-head" style="padding:14px 16px">
+          <h3 style="font-size:14px">🎨 Material Studio</h3>
+          <p style="font-size:10px">Customize metals &amp; gemstones live</p>
+        </div>
+        <!-- MODE TOGGLE -->
+        <div class="mode-toggle-bar" style="margin:10px 16px 0">
+          <span class="mode-toggle-label">Mode</span>
+          <div class="mode-toggle-btns">
+            <button class="mode-btn on" id="mode-basic" onclick="setMode('basic')">Basic</button>
+            <button class="mode-btn" id="mode-pro" onclick="setMode('pro')">Pro CAD</button>
+          </div>
+        </div>
+        <!-- PRO CAD PANEL -->
+        <div id="pro-cad-panel" style="padding:0 16px">
+          <div class="cad-grid">
+            <div class="cad-control">
+              <span class="cad-label">Ring Diameter (mm)</span>
+              <span class="cad-val" id="cad-diameter">17</span>
+              <input type="range" min="13" max="23" value="17" step="0.5" oninput="cadUpdate('diameter',this.value)">
+            </div>
+            <div class="cad-control">
+              <span class="cad-label">Gem Size</span>
+              <span class="cad-val" id="cad-gemsize">1.0×</span>
+              <input type="range" min="0.5" max="2.0" value="1.0" step="0.1" oninput="cadUpdate('gemsize',this.value)">
+            </div>
+            <div class="cad-control">
+              <span class="cad-label">Prong Count</span>
+              <span class="cad-val" id="cad-prongs">4</span>
+              <input type="range" min="3" max="8" value="4" step="1" oninput="cadUpdate('prongs',this.value)">
+            </div>
+            <div class="cad-control">
+              <span class="cad-label">Band Thickness</span>
+              <span class="cad-val" id="cad-thickness">1.0×</span>
+              <input type="range" min="0.5" max="2.0" value="1.0" step="0.1" oninput="cadUpdate('thickness',this.value)">
+            </div>
+          </div>
+          <button class="cad-apply" onclick="applyCAD()">⟳ Rebuild with CAD Settings</button>
+        </div>
+        <div class="mat-bar">
+          <div class="mchip">
+            <div class="mchip-dot" id="chip-metal-dot" style="background:#d4a017"></div>
+            <span id="chip-metal-name">Yellow Gold</span>
+          </div>
+          <div class="mchip">
+            <div class="mchip-dot" id="chip-gem-dot" style="background:#ddeeff;border:1px solid #aaa"></div>
+            <span id="chip-gem-name">Diamond</span>
+          </div>
+          <div class="upd-pill" id="upd-pill"><div class="mini-spin"></div> Updating</div>
+        </div>
+        <div class="custom-tabs">
+          <button class="ctab on" id="ctab-metals" onclick="switchTab('metals',this)"><span class="ctab-icon">⬡</span>Metals</button>
+          <button class="ctab" id="ctab-gems" onclick="switchTab('gems',this)"><span class="ctab-icon">◈</span>Gems</button>
+          <button class="ctab" id="ctab-budget" onclick="switchTab('budget',this)"><span class="ctab-icon">$</span>Budget</button>
+        </div>
+        <div class="custom-body">
+          <!-- METALS TAB -->
+          <div class="ctab-pane on" id="tp-metals">
+            <div class="clbl" style="margin-top:4px">Select Metal</div>
+            <div class="sw-row" id="metal-swatches"></div>
+            <div class="info-card" id="metal-info-card">
+              <div class="ic-row"><span class="ic-k">Selected</span><span class="ic-v" id="mi-name">Yellow Gold (18k)</span></div>
+              <div class="ic-row"><span class="ic-k">Metalness</span><span class="ic-v" id="mi-met">1.00</span></div>
+              <div class="ic-row"><span class="ic-k">Roughness</span><span class="ic-v" id="mi-rgh">0.12</span></div>
+              <div class="ic-row"><span class="ic-k">Price Tier</span><span class="ic-v" id="mi-tier">★★★★☆</span></div>
+            </div>
+          </div>
+          <!-- GEMS TAB -->
+          <div class="ctab-pane" id="tp-gems">
+            <div class="clbl" style="margin-top:4px">Select Gemstone</div>
+            <div class="gem-grid" id="gem-grid"></div>
+          </div>
+          <!-- BUDGET TAB -->
+          <div class="ctab-pane" id="tp-budget">
+            <div class="clbl" style="margin-top:4px">Your Budget</div>
+            <p style="font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+              Pick a budget tier — the metals and gemstones available for that range will be shown instantly. Click Apply to update the 3D model.
+            </p>
+            <div id="bgt-tiers"></div>
+            <div id="bgt-result"></div>
+          </div>
+        </div>
+        <!-- PRICE ESTIMATOR -->
+        <div id="price-section">
+          <div class="price-header">
+            <h4>💰 Live Price Estimate</h4>
+            <span class="price-badge">LIVE</span>
+          </div>
+          <div class="price-display">
+            <div>
+              <div class="price-main" id="price-main">₹12,500</div>
+              <div class="price-range" id="price-range">₹10,000 – ₹15,000</div>
+            </div>
+            <div class="price-breakdown" id="price-breakdown">
+              <span>Metal: —</span>
+              <span>Gem: —</span>
+              <span>Making: —</span>
+            </div>
+          </div>
+        </div>
+        <!-- EXPORT -->
+        <div class="exp-section">
+          <div class="clbl">Export 3D Model</div>
+          <div class="exp-row">
+            <button class="btn-primary" style="flex:1;font-size:11px;padding:9px" onclick="doExport('glb')">⬇ GLB</button>
+            <button class="btn-outline" style="flex:1;font-size:11px" onclick="doExport('stl')">⬇ STL</button>
+          </div>
+          <div class="exp-note">Click Download file in the dialog that appears · GLB = Blender/Unity · STL = 3D printing</div>
+        </div>
+      </div>
+
+    </div><!-- /studio-layout -->
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section id="how">
+  <div style="max-width:1200px;margin:0 auto;text-align:center">
+    <div class="section-label">Step-by-Step</div>
+    <h2 class="section-title">From Photo to 3D in Four Steps</h2>
+    <p style="color:var(--smoke);font-size:14px;max-width:520px;margin:0 auto 48px">Every step below is live — click "Try it" and the studio will execute that step for you right now.</p>
+    <div class="steps-flow">
+
+      <div class="step-item">
+        <div class="step-num">01</div>
+        <div class="step-title">Upload Your Photo</div>
+        <div class="step-desc">Drop any jewelry photo into the upload panel. Works with rings, bracelets, earrings, pendants and brooches on any background — studio or table shot.</div>
+        <button class="step-try" onclick="goTo('#studio');setTimeout(()=>$('img-input').click(),700)">📸 Open File Picker</button>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">02</div>
+        <div class="step-title">Claude Reads the Image</div>
+        <div class="step-desc">Claude's vision model analyzes shape, gem count, metal colour, and prong layout. It returns a JSON description that drives the 3D builder. No manual input needed.</div>
+        <button class="step-try" onclick="goTo('#studio');setTimeout(()=>demo('pendant'),700)">📿 Try with a Pendant</button>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">03</div>
+        <div class="step-title">3D Model Builds Live</div>
+        <div class="step-desc">A parametric mesh constructs the exact jewelry type — correct prong count, stone placement, bail loop or tennis line — and renders in your browser with full orbit controls.</div>
+        <button class="step-try" onclick="goTo('#studio');setTimeout(()=>demo('bracelet'),700)">💫 Build a Bracelet</button>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">04</div>
+        <div class="step-title">Customise &amp; Export</div>
+        <div class="step-desc">Click any metal swatch or gemstone to update the model live. When done, export as GLB for Blender or as STL for a 3D printer — geometry is pre-scaled to millimetres.</div>
+        <button class="step-try" onclick="goTo('#studio');setTimeout(()=>{demo('ring').then(()=>setTimeout(()=>switchTab('gems',document.getElementById('ctab-gems')),1200))},700)">💎 Swap Gemstones Live</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ VIRTUAL TRY-ON ═══ -->
+<section id="tryon-section">
+  <div class="tryon-container">
+    <div style="text-align:center">
+      <div class="section-label">AR Experience</div>
+      <h2 class="section-title">Virtual Try-On 💍</h2>
+      <p style="color:var(--body);font-size:14px;max-width:560px;margin:0 auto">
+        See the jewelry on your hand in real time. Uses your camera + hand/neck detection to overlay the 3D model live.
+      </p>
+    </div>
+    <div class="tryon-grid">
+      <div id="tryon-video-wrap">
+        <video id="tryon-video" autoplay muted playsinline></video>
+        <canvas id="tryon-canvas"></canvas>
+        <div id="tryon-overlay-msg">
+          <div class="big-icon">📷</div>
+          <p>Click "Start Camera" to enable the Virtual Try-On experience</p>
+        </div>
+      </div>
+      <div class="tryon-controls">
+        <div class="tryon-info-card">
+          <h4>👆 Try-On Mode</h4>
+          <p>Point your camera at your hand or neck. The current 3D jewelry model will be overlaid on the detected position.</p>
+          <div class="tryon-mode-row">
+            <button class="tryon-mode-btn on" id="trymode-ring" onclick="setTryOnMode('ring')">💍 Ring</button>
+            <button class="tryon-mode-btn" id="trymode-pendant" onclick="setTryOnMode('pendant')">📿 Pendant</button>
+            <button class="tryon-mode-btn" id="trymode-earring" onclick="setTryOnMode('earring')">✨ Earring</button>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-primary" style="flex:1;font-size:12px;padding:10px" onclick="startTryOn()" id="tryon-start-btn">📷 Start Camera</button>
+            <button class="btn-outline" style="font-size:12px;padding:10px" onclick="stopTryOn()">✕ Stop</button>
+          </div>
+          <div class="tryon-status" id="tryon-status">
+            <div class="tryon-dot" id="tryon-dot"></div>
+            <span id="tryon-status-text">Camera off</span>
+          </div>
+          <div class="tryon-scale">
+            <span style="white-space:nowrap;font-size:10px">Scale:</span>
+            <input type="range" min="0.3" max="2.5" step="0.1" value="1.0" id="tryon-scale" oninput="tryonScaleUpdate(this.value)">
+            <span id="tryon-scale-val" style="white-space:nowrap;font-size:10px;color:var(--wine2)">1.0×</span>
+          </div>
+        </div>
+        <div class="tryon-info-card" style="background:linear-gradient(135deg,rgba(123,29,42,.04),rgba(184,134,11,.03))">
+          <h4 style="margin-bottom:8px">⚡ How it works</h4>
+          <div style="font-size:11px;color:var(--body);line-height:1.8">
+            <div>🤚 <b>Ring mode</b> — detects palm center using skin-tone pixel analysis</div>
+            <div>📿 <b>Pendant</b> — detects neck area, overlays pendant at throat</div>
+            <div>✨ <b>Earring</b> — detects ear/cheek region on right side</div>
+          </div>
+          <div style="margin-top:12px;font-size:10px;color:var(--muted);font-family:var(--font-mono);line-height:1.6">
+            No data is sent to any server — all detection runs 100% in your browser.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+    <div style="display:flex;align-items:center;gap:9px">
+      <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:13px">💎</div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:15px;color:var(--cream2)">Gemcraft AI</div>
+        <div style="font-family:var(--font-mono);font-size:8px;color:var(--smoke);letter-spacing:.18em;text-transform:uppercase">2D → 3D Jewelry Studio</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:22px;font-size:12px">
+      <a onclick="goTo('#hero')"     style="color:var(--smoke);cursor:pointer;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#e8b840'" onmouseout="this.style.color=''">Home</a>
+      <a onclick="goTo('#features')" style="color:var(--smoke);cursor:pointer;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#e8b840'" onmouseout="this.style.color=''">Features</a>
+      <a onclick="goTo('#studio')"   style="color:var(--smoke);cursor:pointer;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#e8b840'" onmouseout="this.style.color=''">Studio</a>
+      <a onclick="goTo('#how')"      style="color:var(--smoke);cursor:pointer;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#e8b840'" onmouseout="this.style.color=''">How It Works</a>
+      <a onclick="goTo('#tryon-section')" style="color:var(--smoke);cursor:pointer;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#e8b840'" onmouseout="this.style.color=''">Try-On ↗</a>
+    </div>
+    <div style="font-size:11px;color:var(--smoke);text-align:right">
+      Powered by Claude Vision · Three.js Rendering<br>
+      <span style="opacity:.4;font-size:10px">Not affiliated with Anthropic</span>
+    </div>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+  AGENTIC AI CHAT — Floats over the existing UI, zero layout impact
+══════════════════════════════════════════════════════════ -->
+<style>
+#ai-fab{position:fixed;bottom:28px;left:28px;z-index:8000;
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--wine),var(--wine2));
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:22px;box-shadow:0 6px 22px rgba(123,29,42,.45);
+  transition:all .25s;color:#fff}
+#ai-fab:hover{transform:scale(1.1) translateY(-2px);box-shadow:0 10px 30px rgba(123,29,42,.55)}
+#ai-fab .fab-badge{position:absolute;top:-3px;right:-3px;width:16px;height:16px;
+  border-radius:50%;background:#3d8b3d;border:2px solid var(--bg);
+  font-size:8px;color:#fff;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono)}
+
+#ai-panel{position:fixed;bottom:90px;left:28px;z-index:7999;
+  width:340px;height:520px;
+  background:var(--card);border:1px solid var(--rule2);border-radius:16px;
+  box-shadow:0 20px 60px rgba(90,20,20,.22),0 0 0 1px rgba(123,29,42,.1);
+  display:flex;flex-direction:column;overflow:hidden;
+  transform:scale(.92) translateY(20px);opacity:0;pointer-events:none;
+  transition:all .28s cubic-bezier(.34,1.56,.64,1)}
+#ai-panel.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all}
+
+.aip-head{padding:14px 16px 12px;border-bottom:1px solid var(--rule);
+  background:linear-gradient(135deg,var(--bg2),var(--bg));flex-shrink:0}
+.aip-head-row{display:flex;align-items:center;justify-content:space-between}
+.aip-title{font-family:var(--font-display);font-size:14px;color:var(--ink);
+  display:flex;align-items:center;gap:8px}
+.aip-dot{width:7px;height:7px;border-radius:50%;background:#3d8b3d;
+  box-shadow:0 0 6px rgba(61,139,61,.6)}
+.aip-close{background:none;border:none;cursor:pointer;color:var(--muted);
+  font-size:16px;padding:2px 6px;border-radius:5px;transition:all .15s}
+.aip-close:hover{background:rgba(123,29,42,.08);color:var(--wine2)}
+.aip-sub{font-size:10px;color:var(--muted);margin-top:3px;font-family:var(--font-mono);
+  letter-spacing:.06em}
+
+.aip-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;
+  scroll-behavior:smooth}
+.aip-msgs::-webkit-scrollbar{width:3px}
+.aip-msgs::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:2px}
+
+.aip-msg{display:flex;gap:7px;align-items:flex-start;animation:aipIn .2s ease-out}
+@keyframes aipIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.aip-msg.user{flex-direction:row-reverse}
+.aip-av{width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+.aip-msg.ai .aip-av{background:rgba(123,29,42,.1);border:1px solid rgba(123,29,42,.2);
+  color:var(--wine2);font-family:var(--font-display)}
+.aip-msg.user .aip-av{background:rgba(61,100,170,.1);border:1px solid rgba(61,100,170,.2);
+  color:#3a5ca8}
+.aip-bubble{max-width:82%;padding:9px 12px;border-radius:11px;font-size:12px;line-height:1.6;
+  word-break:break-word}
+.aip-msg.ai .aip-bubble{background:var(--bg2);border:1px solid var(--rule);
+  color:var(--ink);border-top-left-radius:3px}
+.aip-msg.user .aip-bubble{background:rgba(123,29,42,.08);border:1px solid rgba(123,29,42,.18);
+  color:var(--ink);border-top-right-radius:3px}
+.aip-bubble b{color:var(--wine2)}
+.aip-bubble i{color:var(--muted);font-style:normal;font-size:11px}
+
+.aip-typing{display:flex;gap:4px;align-items:center;padding:4px 0}
+.aip-td{width:5px;height:5px;border-radius:50%;background:var(--wine2);
+  animation:aipBl 1.2s infinite}
+.aip-td:nth-child(2){animation-delay:.2s}.aip-td:nth-child(3){animation-delay:.4s}
+@keyframes aipBl{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+.aip-chips{display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px 0;flex-shrink:0}
+.aip-chip{font-size:10px;padding:4px 10px;border-radius:100px;
+  border:1px solid var(--rule2);color:var(--muted);cursor:pointer;
+  background:var(--bg2);transition:all .14s;white-space:nowrap;
+  font-family:var(--font-body)}
+.aip-chip:hover{border-color:var(--wine);color:var(--wine2);background:rgba(123,29,42,.05)}
+
+.aip-input-row{padding:10px 12px;border-top:1px solid var(--rule);
+  display:flex;gap:7px;align-items:flex-end;flex-shrink:0;background:var(--bg)}
+.aip-input{flex:1;background:var(--card);border:1px solid var(--rule2);
+  border-radius:9px;padding:8px 12px;color:var(--ink);
+  font-family:var(--font-body);font-size:12px;resize:none;
+  min-height:36px;max-height:88px;outline:none;transition:border-color .18s;line-height:1.4}
+.aip-input:focus{border-color:var(--wine);box-shadow:0 0 0 2px rgba(123,29,42,.08)}
+.aip-input::placeholder{color:var(--muted)}
+.aip-send{width:34px;height:34px;border-radius:8px;
+  background:linear-gradient(135deg,var(--wine),var(--wine2));
+  border:none;color:#fff;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:13px;transition:all .15s;flex-shrink:0}
+.aip-send:hover{transform:scale(1.08);box-shadow:0 4px 12px rgba(123,29,42,.4)}
+.aip-send:disabled{opacity:.4;cursor:not-allowed;transform:none}
+</style>
+
+<!-- FAB Button -->
+<button id="ai-fab" onclick="toggleAIPanel()" title="Open AI Design Assistant">
+  💬
+  <div class="fab-badge">✦</div>
+</button>
+
+<!-- Chat Panel -->
+<div id="ai-panel">
+  <div class="aip-head">
+    <div class="aip-head-row">
+      <div class="aip-title">
+        <div class="aip-dot"></div>
+        ✦ Design Assistant
+      </div>
+      <button class="aip-close" onclick="toggleAIPanel()">✕</button>
+    </div>
+    <div class="aip-sub">Powered by Claude · Jewelry Expert</div>
+  </div>
+  <div class="aip-msgs" id="aip-msgs"></div>
+  <div class="aip-chips" id="aip-chips">
+    <div class="aip-chip" onclick="aipQuick('What metal suits warm skin tones?')">Skin tone</div>
+    <div class="aip-chip" onclick="aipQuick('Suggest gems for an engagement ring')">Engagement</div>
+    <div class="aip-chip" onclick="aipQuick('What is the difference between platinum and white gold?')">Pt vs WG</div>
+    <div class="aip-chip" onclick="aipQuick('How do I care for emeralds?')">Care tips</div>
+    <div class="aip-chip" onclick="aipQuick('What budget tier is best for daily wear?')">Daily wear</div>
+  </div>
+  <div class="aip-input-row">
+    <textarea class="aip-input" id="aip-input"
+      placeholder="Ask about gems, metals, styling…"
+      rows="1" onkeydown="aipKey(event)" oninput="aipResize(this)"></textarea>
+    <button class="aip-send" id="aip-send" onclick="aipSend()">➤</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+  JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+"use strict";
+// ─── Material Data ────────────────────────────────────────────
+const METALS = {
+  yellow_gold: {name:'Yellow Gold (18k)', hex:'#d4a017',r:212,g:160,b:23,  M:1.0,R:0.12,tier:4},
+  white_gold:  {name:'White Gold (18k)',  hex:'#e8e8e8',r:232,g:232,b:232, M:1.0,R:0.08,tier:4},
+  rose_gold:   {name:'Rose Gold (14k)',   hex:'#e8a080',r:232,g:160,b:128, M:1.0,R:0.15,tier:3},
+  platinum:    {name:'Platinum (950)',    hex:'#d5d4e8',r:213,g:212,b:232, M:1.0,R:0.06,tier:5},
+  silver:      {name:'Sterling Silver',  hex:'#c0c0cc',r:192,g:192,b:204, M:1.0,R:0.18,tier:1},
+  palladium:   {name:'Palladium',        hex:'#cdcde0',r:205,g:205,b:224, M:1.0,R:0.10,tier:3},
+};
+const GEMS = {
+  diamond:  {name:'Diamond',    hex:'#ddf0ff',r:221,g:240,b:255,R:0.00,T:0.92,ior:2.42,tier:5,e:'💎'},
+  ruby:     {name:'Ruby',       hex:'#dc1414',r:220,g:20, b:20, R:0.04,T:0.70,ior:1.77,tier:4,e:'🔴'},
+  sapphire: {name:'Sapphire',   hex:'#1a30d8',r:26, g:48, b:216,R:0.04,T:0.70,ior:1.77,tier:4,e:'🔵'},
+  emerald:  {name:'Emerald',    hex:'#148c10',r:20, g:140,b:16, R:0.08,T:0.65,ior:1.58,tier:4,e:'🟢'},
+  amethyst: {name:'Amethyst',   hex:'#8820cc',r:136,g:32, b:204,R:0.08,T:0.60,ior:1.54,tier:2,e:'🟣'},
+  topaz:    {name:'Blue Topaz', hex:'#44b8f0',r:68, g:184,b:240,R:0.05,T:0.70,ior:1.61,tier:2,e:'🩵'},
+  garnet:   {name:'Garnet',     hex:'#780010',r:120,g:0,  b:16, R:0.07,T:0.50,ior:1.73,tier:2,e:'❤️'},
+  pearl:    {name:'Pearl',      hex:'#f0e8d8',r:240,g:232,b:216,R:0.14,T:0.00,ior:1.53,tier:3,e:'⚪'},
+};
+const SUBS={
+  diamond:['topaz','amethyst'],ruby:['garnet','amethyst'],
+  sapphire:['topaz','amethyst'],emerald:['topaz','garnet'],
+  platinum:['white_gold','palladium'],yellow_gold:['rose_gold','silver']
+};
+const GC_MAP = {ring:1,pendant:5,earring:1,bracelet:8,brooch:10,necklace:3};
+const CAM = {
+  ring:     {th:0.28,ph:1.05,r:4.6,ly:0.4},
+  pendant:  {th:0.10,ph:1.20,r:4.0,ly:0.25},
+  earring:  {th:0.20,ph:1.15,r:3.6,ly:0.10},
+  bracelet: {th:0.05,ph:0.68,r:4.2,ly:0.0},
+  brooch:   {th:0.10,ph:0.82,r:4.1,ly:0.05},
+  necklace: {th:0.10,ph:1.20,r:4.0,ly:0.25},
+};
+
+// ─── State ────────────────────────────────────────────────────
+let curMetal = 'yellow_gold', curGem = 'diamond';
+let curType = 'ring', curGC = 1;
+let modelReady = false;
+
+// Three.js — single renderer for studio viewer only
+let renderer, scene, camera, jGroup;
+let autoRot = true, wireMode = false;
+let sph = {th:0.28,ph:1.05,r:4.6}, lookY = 0.4;
+let drag = false, lastMouse = {x:0,y:0};
+
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const cap = s => s ? s[0].toUpperCase() + s.slice(1) : '';
+
+// ─── Scroll helper ────────────────────────────────────────────
+function goTo(sel){ document.querySelector(sel)?.scrollIntoView({behavior:'smooth'}); }
+
+// ─── Toast ────────────────────────────────────────────────────
+function toast(msg, type='ok', dur=3500){
+  const el = $('toast');
+  el.textContent = msg; el.className = type;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display='none', dur);
+}
+
+// ─── Hugging Face API Key ─────────────────────────────────────
+let hfKey = '';
+function saveHFKey(v) {
+  hfKey = v.trim();
+  const dot = $('hf-dot');
+  if (hfKey.startsWith('hf_') && hfKey.length > 8) {
+    dot.style.background = '#3d8b3d';
+    dot.style.boxShadow  = '0 0 6px rgba(61,139,61,.5)';
+  } else {
+    dot.style.background = hfKey ? '#c0392b' : 'var(--muted)';
+    dot.style.boxShadow  = 'none';
+  }
+}
+
+// ─── HF: Image classification via BLIP captioning ─────────────
+async function analyzeWithHF(b64, mediaType) {
+  // Convert base64 to Blob for HF API
+  const byteStr = atob(b64);
+  const arr = new Uint8Array(byteStr.length);
+  for (let i = 0; i < byteStr.length; i++) arr[i] = byteStr.charCodeAt(i);
+  const blob = new Blob([arr], { type: mediaType });
+
+  // Step 1: BLIP image captioning — understand what's in the image
+  const captionResp = await fetch(
+    'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-large',
+    {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${hfKey}`, 'Content-Type': mediaType },
+      body: blob
+    }
+  );
+  if (!captionResp.ok) throw new Error(`HF API error ${captionResp.status}: ${await captionResp.text()}`);
+  const captionData = await captionResp.json();
+  const caption = Array.isArray(captionData) ? captionData[0]?.generated_text || '' : captionData.generated_text || '';
+
+  // Step 2: Parse caption into jewelry metadata
+  return parseCaptionToJewelry(caption);
+}
+
+// ─── Parse BLIP caption → jewelry analysis object ─────────────
+function parseCaptionToJewelry(caption) {
+  const c = caption.toLowerCase();
+
+  // Detect jewelry type
+  let jewelry_type = 'ring';
+  if (c.includes('necklace') || c.includes('chain') || c.includes('neck'))      jewelry_type = 'necklace';
+  else if (c.includes('bracelet') || c.includes('bangle') || c.includes('wrist')) jewelry_type = 'bracelet';
+  else if (c.includes('earring') || c.includes('stud') || c.includes('ear'))     jewelry_type = 'earring';
+  else if (c.includes('pendant') || c.includes('locket'))                         jewelry_type = 'pendant';
+  else if (c.includes('brooch') || c.includes('pin') || c.includes('clip'))      jewelry_type = 'brooch';
+  else if (c.includes('ring') || c.includes('band') || c.includes('solitaire'))  jewelry_type = 'ring';
+
+  // Detect metal
+  let metal_guess = 'yellow_gold';
+  if (c.includes('platinum') || c.includes('silver white') || c.includes('white metal'))   metal_guess = 'platinum';
+  else if (c.includes('white gold') || c.includes('silver') || c.includes('grey metal'))   metal_guess = 'white_gold';
+  else if (c.includes('rose gold') || c.includes('pink gold') || c.includes('rose'))       metal_guess = 'rose_gold';
+  else if (c.includes('gold') || c.includes('yellow') || c.includes('golden'))             metal_guess = 'yellow_gold';
+
+  // Detect gem
+  let gem_guess = 'diamond';
+  if (c.includes('ruby') || c.includes('red gem') || c.includes('red stone'))           gem_guess = 'ruby';
+  else if (c.includes('sapphire') || c.includes('blue gem') || c.includes('blue stone')) gem_guess = 'sapphire';
+  else if (c.includes('emerald') || c.includes('green gem') || c.includes('green stone'))gem_guess = 'emerald';
+  else if (c.includes('amethyst') || c.includes('purple'))                               gem_guess = 'amethyst';
+  else if (c.includes('topaz') || c.includes('blue topaz'))                              gem_guess = 'topaz';
+  else if (c.includes('garnet') || c.includes('dark red'))                               gem_guess = 'garnet';
+  else if (c.includes('pearl') || c.includes('white gem'))                               gem_guess = 'pearl';
+  else if (c.includes('diamond') || c.includes('crystal') || c.includes('brilliant'))    gem_guess = 'diamond';
+
+  // Detect gem count
+  let gem_count = GC_MAP[jewelry_type] || 1;
+  const numWords = {one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10};
+  for (const [w,n] of Object.entries(numWords)) { if (c.includes(w+' gem')||c.includes(w+' stone')||c.includes(w+' diamond')) { gem_count=n; break; } }
+  const numMatch = c.match(/(\d+)\s*(gem|stone|diamond|ruby|pearl)/);
+  if (numMatch) gem_count = Math.min(parseInt(numMatch[1]), 12);
+
+  // Detect style
+  let style = 'Classic';
+  if (c.includes('modern') || c.includes('contemporary'))  style = 'Modern';
+  else if (c.includes('vintage') || c.includes('antique')) style = 'Vintage';
+  else if (c.includes('minimal') || c.includes('simple'))  style = 'Minimalist';
+  else if (c.includes('ornate') || c.includes('elaborate'))style = 'Statement';
+  else if (c.includes('bridal') || c.includes('wedding'))  style = 'Bridal';
+
+  const symmetry = c.includes('asymmetric') ? 0.65 : c.includes('symmetric') ? 0.95 : 0.85;
+  const confidence = caption.length > 15 ? 0.88 : 0.72;
+
+  return {
+    jewelry_type, gem_count, confidence,
+    description: caption ? `HF AI detected: "${caption}"` : 'Jewelry piece analyzed via image recognition.',
+    metal_guess, gem_guess, style, symmetry,
+    components: [
+      {type:'metal_body',count:1},
+      {type:'gemstone',count:gem_count},
+      {type:'prong_setting',count:Math.min(gem_count,6)}
+    ]
+  };
+}
+
+// ─── Image Analysis pipeline — HF first, pixel fallback ───────
+async function runPipeline(b64, mediaType, filename) {
+  let analysis;
+
+  if (hfKey && hfKey.startsWith('hf_')) {
+    // HF path
+    showViewerLoad('Sending to Hugging Face AI…');
+    setOverlayText('HF ANALYZING…');
+    try {
+      analysis = await analyzeWithHF(b64, mediaType);
+      toast('Hugging Face AI analysis complete ✓', 'ok');
+    } catch(e) {
+      toast('HF API error: ' + e.message + ' — using pixel analysis', 'err', 5000);
+      showViewerLoad('Analyzing image…');
+      setOverlayText('ANALYZING…');
+      analysis = await pixelFallback(b64, filename);
+    }
+  } else {
+    // Pixel fallback
+    showViewerLoad('Analyzing image…');
+    setOverlayText('ANALYZING…');
+    analysis = await pixelFallback(b64, filename);
+  }
+
+  curType = analysis.jewelry_type || 'ring';
+  curGC   = analysis.gem_count    || GC_MAP[curType] || 1;
+  if (analysis.metal_guess && METALS[analysis.metal_guess] && !modelReady) curMetal = analysis.metal_guess;
+  if (analysis.gem_guess   && GEMS[analysis.gem_guess]     && !modelReady) curGem   = analysis.gem_guess;
+
+  populateAnalysis(analysis);
+  showViewerLoad('Building 3D model…');
+  await sleep(50);
+  buildAndShow(curType, curGC);
+  buildCustomizerUI();
+  hideViewerLoad();
+  modelReady = true;
+  toast('3D model ready — ' + cap(curType) + ' with ' + curGC + ' gem(s) ✓', 'ok');
+}
+
+function setOverlayText(txt) {
+  const el = $('img-overlay-text');
+  if (el) el.textContent = txt;
+}
+$('img-input').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) handleImageFile(f);
+});
+$('dropzone').addEventListener('click', () => $('img-input').click());
+$('dropzone').addEventListener('dragover', e => { e.preventDefault(); $('dropzone').classList.add('drag-over'); });
+$('dropzone').addEventListener('dragleave', () => $('dropzone').classList.remove('drag-over'));
+$('dropzone').addEventListener('drop', e => {
+  e.preventDefault(); $('dropzone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) handleImageFile(f);
+});
+
+async function handleImageFile(file) {
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    $('img-preview-wrap').style.display = 'block';
+    $('img-preview').src = ev.target.result;
+    $('img-overlay').style.display = 'flex';
+    
+    // Extract base64
+    const b64 = ev.target.result.split(',')[1];
+    const mt  = file.type || 'image/jpeg';
+    
+    await runPipeline(b64, mt, file.name);
+    $('img-overlay').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── Pixel fallback classifier ────────────────────────────────
+async function pixelFallback(b64, filename) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const W=120, H=120;
+      const cv = document.createElement('canvas'); cv.width=W; cv.height=H;
+      const ctx = cv.getContext('2d'); ctx.drawImage(img,0,0,W,H);
+      const d = ctx.getImageData(0,0,W,H).data;
+      const aspect = img.naturalWidth / img.naturalHeight;
+      let metal=0,gem=0,fg=0,annM=0,annT=0,n=0,sx=0,sy=0,sx2=0,sy2=0,gt=0;
+      const cx=W/2,cy=H/2,mr=Math.min(W,H)*.30,bw=mr*.30;
+      for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+        const i=(y*W+x)*4,r=d[i],g2=d[i+1],b2=d[i+2],a=d[i+3];
+        if(a<25) continue;
+        const mx=Math.max(r,g2,b2),mn=Math.min(r,g2,b2),V=mx/255,S=mx?((mx-mn)/mx):0;
+        if(V>.93&&S<.09) continue;
+        fg++;sx+=x;sy+=y;sx2+=x*x;sy2+=y*y;n++;
+        const dx=x-cx,dy2=y-cy,dist=Math.sqrt(dx*dx+dy2*dy2),inA=Math.abs(dist-mr)<bw;
+        if(V>.42&&S<.52){metal++;if(inA){annM++;annT++;}}
+        else if(S>.42||(V>.85&&S<.22)){gem++;if(y<cy)gt++;if(inA)annT++;}
+      }
+      if(!n){resolve({jewelry_type:'ring',gem_count:1,confidence:.6,
+        description:'Could not analyze image. Using default ring.',
+        metal_guess:'yellow_gold',gem_guess:'diamond',style:'Classic',symmetry:.8,
+        components:[{type:'metal_body',count:1},{type:'gemstone',count:1},{type:'prong_setting',count:1}]});return;}
+      const mr2=metal/fg,gr=gem/fg,mX=sx/n,mY=sy/n;
+      const stdX=Math.sqrt(sx2/n-mX*mX)/W,stdY=Math.sqrt(sy2/n-mY*mY)/H;
+      const spread=stdX/(stdY+1e-5),rs=annT>8?annM/annT:0,gtf=gem>0?gt/gem:.5;
+      let t='ring';
+      if(aspect>1.65&&spread>1.22)t='bracelet';
+      else if(aspect>1.42&&spread>1.14&&mr2>.16)t='bracelet';
+      else if(rs>.35&&aspect<1.42&&aspect>.68)t='ring';
+      else if(rs>.25&&mr2>.28&&aspect<1.30)t='ring';
+      else if(aspect<.72&&gtf>.58&&gr<.14)t='earring';
+      else if(spread<.80&&gr<.11&&mr2>.20)t='earring';
+      else if(aspect<.88&&gr>.05)t='pendant';
+      else if(spread<.92&&gr>.07)t='pendant';
+      else if(gr>.15&&aspect>.78&&aspect<1.28)t='brooch';
+      const gc=Math.max(Math.round(gem*.12+1),GC_MAP[t]||1);
+      resolve({jewelry_type:t,gem_count:Math.min(gc,12),confidence:.72,
+        description:`Detected as ${t} based on image shape and color analysis.`,
+        metal_guess:'yellow_gold',gem_guess:'diamond',style:'Classic',symmetry:.82,
+        components:[{type:'metal_body',count:1},{type:'gemstone',count:gc},{type:'prong_setting',count:gc}]});
+    };
+    img.src='data:image/jpeg;base64,'+b64;
+  });
+}
+
+// ─── Demo (no image needed) ───────────────────────────────────
+async function demo(type) {
+  curType = type;
+  curGC   = GC_MAP[type] || 1;
+  const demoData = {
+    jewelry_type:type, gem_count:curGC, confidence:.90,
+    description: {
+      ring:     'Elegant solitaire ring with a brilliant-cut center stone in a classic prong setting.',
+      pendant:  'Delicate pendant with a round center stone surrounded by a decorative metal frame.',
+      earring:  'Stud earring with a single gemstone in a four-prong basket setting.',
+      bracelet: 'Tennis bracelet with gemstones set along an arc in close-set prong settings.',
+      brooch:   'Ornate brooch with a starburst frame, center stone, and surrounding accent gems.',
+    }[type],
+    metal_guess:'yellow_gold', gem_guess:'diamond', style:'Classic', symmetry:.92,
+    components:[{type:'metal_body',count:1},{type:'gemstone',count:curGC},{type:'prong_setting',count:curGC}]
+  };
+  showViewerLoad('Building demo 3D model…');
+  await sleep(80);
+  populateAnalysis(demoData);
+  buildAndShow(type, curGC);
+  buildCustomizerUI();
+  hideViewerLoad();
+  modelReady = true;
+  toast('Demo ' + cap(type) + ' model loaded ✓', 'ok');
+  // Show WOW panels
+  $('ai-design-bar').classList.add('visible');
+  $('style-transfer-wrap').classList.add('visible');
+  buildExplanation({jewelry_type:type,gem_count:curGC,confidence:.90,symmetry:.92,metal_guess:'yellow_gold',gem_guess:'diamond',style:'Classic'});
+}
+
+// ─── Populate analysis panel ──────────────────────────────────
+function populateAnalysis(a) {
+  $('ar-type').textContent = cap(a.jewelry_type);
+  $('ar-conf').textContent = Math.round((a.confidence||.8)*100) + '% MATCH';
+  $('ar-desc').textContent = a.description || '';
+  $('ar-gems').textContent  = a.gem_count || '?';
+  $('ar-metal').textContent = a.metal_guess ? METALS[a.metal_guess]?.name.split(' (')[0] : '—';
+  $('ar-sym').textContent   = Math.round((a.symmetry||.85)*100) + '%';
+  $('ar-style').textContent = a.style || 'Classic';
+  $('type-sel').value = a.jewelry_type;
+
+  const iconMap={metal_body:'🏅',gemstone:'💎',prong_setting:'🔩',bail:'🪝',frame:'⭕'};
+  const nameMap={metal_body:'Metal Band',gemstone:'Gemstone',prong_setting:'Prong Setting',bail:'Bail Loop',frame:'Frame'};
+  const comps = a.components || [{type:'metal_body',count:1},{type:'gemstone',count:a.gem_count||1},{type:'prong_setting',count:a.gem_count||1}];
+  $('comp-list').innerHTML = comps.map(c=>`
+    <div class="comp-item fade-in">
+      <span class="comp-icon">${iconMap[c.type]||'•'}</span>
+      <span class="comp-name">${nameMap[c.type]||c.type}</span>
+      <span class="comp-cnt">×${c.count}</span>
+    </div>`).join('');
+
+  $('analysis-result').style.display = 'block';
+  $('analysis-result').className = 'fade-in';
+
+  // Show AI Design suggestions bar and Style Transfer
+  $('ai-design-bar').classList.add('visible');
+  $('style-transfer-wrap').classList.add('visible');
+
+  // Build AI Explanation
+  buildExplanation(a);
+}
+
+// ─── Rebuild from type override ───────────────────────────────
+async function rebuildAs() {
+  const t = $('type-sel').value;
+  curType = t;
+  curGC   = GC_MAP[t] || 1;
+  showViewerLoad('Rebuilding as ' + cap(t) + '…');
+  await sleep(80);
+  buildAndShow(t, curGC);
+  hideViewerLoad();
+  toast('Rebuilt as ' + cap(t) + ' ✓', 'ok');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  THREE.JS — SINGLE RENDERER, CONTEXT LOSS RECOVERY, THROTTLED
+// ═══════════════════════════════════════════════════════════════
+let ctxLost = false;    // track WebGL context loss
+let lastFrameTime = 0; // for throttling to ~40fps max
+
+function initMainThree() {
+  const canvas = $('three-canvas');
+  const wrap   = $('viewer-panel');
+
+  // Single renderer — pixelRatio capped at 1 to halve GPU load on retina
+  renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: false,
+    powerPreference: 'high-performance',
+    preserveDrawingBuffer: false,
+  });
+  renderer.setPixelRatio(1);   // DO NOT use devicePixelRatio — kills GPU on HiDPI
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.5;
+  renderer.shadowMap.enabled = false;  // shadows removed — major GPU saving
+  renderer.setClearColor(0x1a0508, 1);
+
+  // ── Context loss / restore handlers ────────────────────────
+  canvas.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    ctxLost = true;
+    toast('GPU context lost — restoring…', 'info', 3000);
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    ctxLost = false;
+    buildScene();
+    if(curType && jGroup) buildAndShow(curType, curGC);
+    toast('GPU context restored ✓', 'ok', 2000);
+  });
+
+  buildScene();
+  resizeMainRenderer();
+
+  // Orbit controls
+  canvas.addEventListener('mousedown', e=>{drag=true;lastMouse={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup', ()=>drag=false);
+  window.addEventListener('mousemove', e=>{
+    if(!drag) return;
+    sph.th -= (e.clientX-lastMouse.x)*.01;
+    sph.ph  = clamp(sph.ph+(e.clientY-lastMouse.y)*.01, .08, Math.PI-.08);
+    lastMouse = {x:e.clientX, y:e.clientY};
+  });
+  canvas.addEventListener('wheel', e=>{
+    sph.r = clamp(sph.r+e.deltaY*.005, 1.5, 14);
+  }, {passive:true});
+  let lt=null;
+  canvas.addEventListener('touchstart', e=>{lt=e.touches[0];}, {passive:true});
+  canvas.addEventListener('touchmove', e=>{
+    if(!lt) return;
+    const t=e.touches[0];
+    sph.th -= (t.clientX-lt.clientX)*.012;
+    sph.ph  = clamp(sph.ph+(t.clientY-lt.clientY)*.012, .08, Math.PI-.08);
+    lt=t; e.preventDefault();
+  }, {passive:false});
+
+  window.addEventListener('resize', resizeMainRenderer);
+  mainLoop(0);
+}
+
+function buildScene() {
+  scene  = new THREE.Scene();
+  scene.background = new THREE.Color(0x1a0508);
+  scene.fog = new THREE.Fog(0x1a0508, 14, 30);
+  camera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
+
+  // Lights — no shadows, reduced count for GPU efficiency
+  scene.add(new THREE.AmbientLight(0xffeedd, 0.9));
+  const key = new THREE.DirectionalLight(0xfff6e0, 3.5);
+  key.position.set(3, 8, 4); scene.add(key);
+  const fill = new THREE.PointLight(0xffaa20, 2.5, 16);
+  fill.position.set(-3, 2, 3); scene.add(fill);
+  const rim  = new THREE.PointLight(0xff4466, 2.0, 16);
+  rim.position.set(2, -1, -4); scene.add(rim);
+  const accent = new THREE.PointLight(0xffe8a0, 1.8, 14);
+  accent.position.set(4, 3, -2); scene.add(accent);
+
+  // Floor — no shadows
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(14,14),
+    new THREE.MeshStandardMaterial({color:0x2a0408,roughness:.3,metalness:.4,
+      transparent:true,opacity:.5}));
+  fl.rotation.x=-Math.PI/2; fl.position.y=-2.5; scene.add(fl);
+
+  // Glow disc
+  const gd = new THREE.Mesh(new THREE.CircleGeometry(2,48),
+    new THREE.MeshBasicMaterial({color:0x6a1020,transparent:true,opacity:.12,side:THREE.DoubleSide}));
+  gd.position.set(0,.3,-1.6); scene.add(gd);
+}
+
+function resizeMainRenderer() {
+  if(!renderer) return;
+  const wrap = $('viewer-panel');
+  const w = wrap.clientWidth, h = Math.max(wrap.clientHeight, 400);
+  renderer.setSize(w, h, false);  // false = don't set canvas style
+  if(camera){ camera.aspect = w/h; camera.updateProjectionMatrix(); }
+}
+
+function mainLoop(ts) {
+  requestAnimationFrame(mainLoop);
+  if(ctxLost || !renderer) return;
+
+  // Throttle to ~40 fps — halves GPU use vs 60fps with no visible difference
+  if(ts - lastFrameTime < 25) return;
+  lastFrameTime = ts;
+
+  if(autoRot && jGroup) jGroup.rotation.y += 0.012;  // faster feels same at 40fps
+  camera.position.x = sph.r*Math.sin(sph.ph)*Math.sin(sph.th);
+  camera.position.y = sph.r*Math.cos(sph.ph) + lookY;
+  camera.position.z = sph.r*Math.sin(sph.ph)*Math.cos(sph.th);
+  camera.lookAt(0, lookY, 0);
+  renderer.render(scene, camera);
+}
+
+// ─── Viewer show/hide helpers ─────────────────────────────────
+function showViewerLoad(msg) {
+  $('viewer-empty').style.display = 'none';
+  $('three-canvas').style.display = 'none';
+  $('viewer-load').style.display  = 'flex';
+  $('load-text').textContent = msg;
+  if(!renderer) initMainThree();
+}
+function hideViewerLoad() {
+  $('viewer-load').style.display  = 'none';
+  $('three-canvas').style.display = 'block';
+  $('viewer-controls').style.display = 'flex';
+  $('cam-tip').style.display = 'block';
+  $('viewer-stats').style.display = 'flex';
+  resizeMainRenderer();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  JEWELRY BUILDERS
+//  All builders work in a consistent coordinate space.
+//  Materials are tagged so updateMaterials() can swap them live.
+// ═══════════════════════════════════════════════════════════════
+function mkM(geo){ const m=new THREE.Mesh(geo,matMetal()); m.userData.isM=true; return m; }
+function mkG(geo){ const m=new THREE.Mesh(geo,matGem());   m.userData.isG=true; return m; }
+
+function matMetal(){
+  const m=METALS[curMetal];
+  return new THREE.MeshPhysicalMaterial({
+    color:new THREE.Color(m.r/255,m.g/255,m.b/255),
+    metalness:m.M, roughness:m.R,
+    envMapIntensity:6,
+    clearcoat:0.5, clearcoatRoughness:0.1,
+    reflectivity:0.9
+  });
+}
+function matGem(){
+  const g=GEMS[curGem];
+  return new THREE.MeshPhysicalMaterial({
+    color:new THREE.Color(g.r/255,g.g/255,g.b/255),
+    metalness:0, roughness:g.R,
+    transmission:g.T, ior:g.ior,
+    transparent:true, opacity:g.T>.1?.92:1,
+    envMapIntensity:8,
+    clearcoat:1.0, clearcoatRoughness:0.0,
+    thickness:0.5, attenuationDistance:0.3,
+    attenuationColor:new THREE.Color(g.r/255,g.g/255,g.b/255)
+  });
+}
+
+// ── Brilliant-cut gem: flat top table, angled crown, deep pavilion ──
+function makeBrilliantGem(r){
+  const pts=[], segs=20;
+  // Table (flat top): r*0.55 wide at y=r*0.28
+  pts.push(new THREE.Vector2(0, r*0.28));
+  pts.push(new THREE.Vector2(r*0.55, r*0.28));
+  // Crown bezel down to girdle: r*1.0 wide at y=0
+  pts.push(new THREE.Vector2(r*1.0, 0));
+  // Pavilion taper down to culet at y=-r*1.3
+  pts.push(new THREE.Vector2(r*0.4, -r*0.7));
+  pts.push(new THREE.Vector2(0, -r*1.3));
+  return new THREE.LatheGeometry(pts, segs);
+}
+
+// ── Cushion-cut gem: rounded square silhouette ──
+function makeCushionGem(r){
+  const pts=[];
+  pts.push(new THREE.Vector2(0, r*0.22));
+  pts.push(new THREE.Vector2(r*0.48, r*0.22));
+  pts.push(new THREE.Vector2(r*0.85, 0));
+  pts.push(new THREE.Vector2(r*0.38, -r*0.6));
+  pts.push(new THREE.Vector2(0, -r*1.1));
+  return new THREE.LatheGeometry(pts, 16);
+}
+
+// ── Cabochon gem (for pearl/garnet): smooth dome ──
+function makeCabochonGem(r){
+  const pts=[];
+  for(let i=0;i<=12;i++){
+    const a=(i/12)*Math.PI*0.52;
+    pts.push(new THREE.Vector2(Math.sin(a)*r, Math.cos(a)*r*0.55 - r*0.22));
+  }
+  pts.push(new THREE.Vector2(0, -r*0.22));
+  return new THREE.LatheGeometry(pts, 24);
+}
+
+function gemGeo(r){
+  const g=GEMS[curGem];
+  if(g.T===0) return makeCabochonGem(r);          // pearl / garnet
+  if(r>0.18)  return makeBrilliantGem(r);          // large stone
+  return makeCushionGem(r);                        // small accent
+}
+
+// ── Detailed prong: tapered with tip cap ──
+function addProngs(g, cx, cy, cz, sr, np){
+  const h=sr*1.5, rad=sr+0.025;
+  for(let i=0;i<np;i++){
+    const a=2*Math.PI*i/np;
+    const p=mkM(new THREE.CylinderGeometry(0.014,0.022,h,8));
+    p.position.set(cx+Math.cos(a)*rad, cy+sr*0.55, cz+Math.sin(a)*rad);
+    p.rotation.set(Math.sin(a)*0.42,0,-Math.cos(a)*0.42);
+    g.add(p);
+    // tip cap
+    const cap=mkM(new THREE.SphereGeometry(0.016,6,4));
+    cap.position.set(
+      cx+Math.cos(a)*rad+Math.cos(a)*0.01,
+      cy+sr*0.55+h*0.5,
+      cz+Math.sin(a)*rad+Math.sin(a)*0.01
+    );
+    g.add(cap);
+  }
+}
+
+// ── Gallery basket around gem ──
+function addSetting(g, cx, cy, cz, sr){
+  // girdle ring
+  const collar=mkM(new THREE.TorusGeometry(sr+0.04,0.022,12,40));
+  collar.position.set(cx,cy,cz); collar.rotation.x=Math.PI/2; g.add(collar);
+  // under-basket: tapered cylinder open top
+  const bask=mkM(new THREE.CylinderGeometry(sr+0.04,sr*0.6,sr*0.55,24,1,true));
+  bask.position.set(cx,cy-sr*0.55,cz); g.add(bask);
+  // base plate
+  const plate=mkM(new THREE.CircleGeometry(sr*0.62,24));
+  plate.position.set(cx,cy-sr*0.82,cz); plate.rotation.x=-Math.PI/2; g.add(plate);
+  // gem
+  const s=mkG(gemGeo(sr)); s.position.set(cx,cy,cz); g.add(s);
+  addProngs(g,cx,cy,cz,sr,sr>0.2?6:4);
+}
+
+function addMini(g, cx, cy, cz, sr){
+  const s=mkG(gemGeo(sr)); s.position.set(cx,cy,cz); g.add(s);
+  for(let i=0;i<4;i++){
+    const a=2*Math.PI*i/4;
+    const p=mkM(new THREE.CylinderGeometry(0.009,0.013,sr*1.2,6));
+    p.position.set(cx+Math.cos(a)*(sr+0.01),cy+sr*0.35,cz+Math.sin(a)*(sr+0.01));
+    p.rotation.set(Math.sin(a)*0.38,0,-Math.cos(a)*0.38);
+    g.add(p);
+  }
+}
+
+// ── RING: profiled band with milgrain edge detail ──
+function buildRing(gc){
+  const g=new THREE.Group();
+  // Main band - thicker tube with slight profile
+  const band=mkM(new THREE.TorusGeometry(1,0.13,40,96));
+  band.rotation.x=Math.PI/2; g.add(band);
+  // Inner comfort-fit groove
+  const inner=mkM(new THREE.TorusGeometry(1,0.065,16,96));
+  inner.rotation.x=Math.PI/2; g.add(inner);
+  // Milgrain edge rings
+  for(const dy of [-0.09,0.09]){
+    const mg=mkM(new THREE.TorusGeometry(1,0.012,8,96));
+    mg.rotation.x=Math.PI/2; mg.position.y=dy; g.add(mg);
+  }
+  // Shoulder taper (wider at top for solitaire)
+  if(gc===1){
+    for(const s of[-1,1]){
+      const sh=mkM(new THREE.TorusGeometry(1,0.11,16,32,Math.PI*0.35));
+      sh.rotation.x=Math.PI/2;
+      sh.rotation.z=s*(Math.PI/2+0.1);
+      g.add(sh);
+    }
+    addSetting(g,0,1.13,0,.28);
+  } else if(gc<=3){
+    addSetting(g,-.44,1.09,0,.17); addSetting(g,0,1.15,0,.26); addSetting(g,.44,1.09,0,.17);
+  } else {
+    addSetting(g,0,1.13,0,.25);
+    for(const s of[-1,1]) for(let j=0;j<3;j++){
+      const a=s*(.32+j*.19);
+      addMini(g,Math.sin(a)*1.01,Math.cos(a)*1.01,.13,.075);
+    }
+  }
+  g.rotation.x=.22; return g;
+}
+
+// ── PENDANT: filigree frame + bail ──
+function buildPendant(gc){
+  const g=new THREE.Group();
+  // Bail — oval loop
+  const bail=mkM(new THREE.TorusGeometry(.19,.042,14,28));
+  bail.position.y=1.05; g.add(bail);
+  // Chain connector rod
+  const rod=mkM(new THREE.CylinderGeometry(.018,.018,.18,10));
+  rod.position.y=0.88; g.add(rod);
+  // Outer decorative frame (slightly oval)
+  const frame=mkM(new THREE.TorusGeometry(.58,.052,14,52));
+  frame.scale.set(.88,1.12,1); g.add(frame);
+  // Inner accent ring
+  const inner=mkM(new THREE.TorusGeometry(.38,.022,10,48));
+  inner.scale.set(.88,1.12,1); g.add(inner);
+  // Center gem
+  const s=mkG(gemGeo(.34)); g.add(s);
+  // Six prongs for center
+  addProngs(g,0,0,0,.34,6);
+  // Small filigree beads on outer frame
+  for(let i=0;i<12;i++){
+    const a=2*Math.PI*i/12;
+    const b=mkM(new THREE.SphereGeometry(.025,8,6));
+    b.position.set(Math.cos(a)*.58*0.88,Math.sin(a)*.58*1.12,0); g.add(b);
+  }
+  if(gc>2) for(let i=0;i<5;i++){const a=2*Math.PI*i/5;addMini(g,Math.cos(a)*.5,Math.sin(a)*.56,0,.085);}
+  return g;
+}
+
+// ── EARRING: detailed stud with gallery basket ──
+function buildEarring(){
+  const g=new THREE.Group();
+  // Post
+  const post=mkM(new THREE.CylinderGeometry(.022,.017,.85,10));
+  post.position.y=-.55; g.add(post);
+  // Butterfly back (flat disc)
+  const back=mkM(new THREE.CylinderGeometry(.08,.08,.025,16));
+  back.position.y=-.92; g.add(back);
+  // Gallery basket
+  const bask=mkM(new THREE.CylinderGeometry(.31,.22,.20,24,1,true));
+  bask.position.y=-.08; g.add(bask);
+  const base=mkM(new THREE.CircleGeometry(.23,24));
+  base.position.y=-.28; base.rotation.x=-Math.PI/2; g.add(base);
+  // Girdle ring
+  const gird=mkM(new THREE.TorusGeometry(.30,.024,10,36));
+  gird.rotation.x=Math.PI/2; g.add(gird);
+  // Gem
+  const stone=mkG(gemGeo(.27)); stone.position.y=.065; g.add(stone);
+  addProngs(g,0,.065,0,.27,4);
+  return g;
+}
+
+// ── BRACELET: tennis style with detailed links ──
+function buildBracelet(gc){
+  const g=new THREE.Group();
+  const R=1.25, ARC=Math.PI*1.42;
+  // Main band
+  const band=mkM(new THREE.TorusGeometry(R,.092,22,100,ARC));
+  band.rotation.x=Math.PI/2; g.add(band);
+  // Edge rails
+  for(const dy of[-.065,.065]){
+    const rail=mkM(new THREE.TorusGeometry(R,.026,10,100,ARC));
+    rail.rotation.x=Math.PI/2; rail.position.y=dy; g.add(rail);
+  }
+  // Link dividers
+  const sc=Math.min(Math.max(gc,5),11);
+  for(let i=0;i<=sc;i++){
+    const t=(i/sc)*ARC;
+    const div=mkM(new THREE.BoxGeometry(.04,.22,.04));
+    div.position.set(R*Math.cos(t),.0,-R*Math.sin(t));
+    div.rotation.y=t; g.add(div);
+  }
+  // Stones in each link
+  for(let i=0;i<sc;i++){
+    const t=(i+.5)/sc*ARC;
+    addMini(g,R*Math.cos(t),.11,-R*Math.sin(t),.098);
+  }
+  // End caps
+  for(const side of[0,1]){
+    const t=side*(ARC);
+    const cap=mkM(new THREE.SphereGeometry(.12,12,8));
+    cap.position.set(R*Math.cos(t),.0,-R*Math.sin(t)); g.add(cap);
+  }
+  g.rotation.x=-.28; return g;
+}
+
+// ── BROOCH: starburst with detailed rays ──
+function buildBrooch(gc){
+  const g=new THREE.Group();
+  // Outer ring
+  g.add(mkM(new THREE.TorusGeometry(.92,.068,16,64)));
+  // Inner ring
+  g.add(mkM(new THREE.TorusGeometry(.62,.030,10,48)));
+  // Rays — alternating long/short with diamond cross-section
+  for(let i=0;i<16;i++){
+    const a=2*Math.PI*i/16;
+    const long=(i%2===0);
+    const len=long?.88:.55, w=long?.030:.022;
+    const s=mkM(new THREE.CylinderGeometry(w*0.6,w,len,6));
+    s.rotation.z=a+Math.PI/2;
+    s.position.set(Math.cos(a)*(long?.55:.44),Math.sin(a)*(long?.55:.44),0);
+    g.add(s);
+    // Ray tip bead
+    if(long){
+      const tip=mkM(new THREE.SphereGeometry(.038,8,6));
+      tip.position.set(Math.cos(a)*.96,Math.sin(a)*.96,0); g.add(tip);
+    }
+  }
+  // Center gem (large)
+  const cg=mkG(gemGeo(.29)); g.add(cg);
+  addProngs(g,0,0,0,.29,6);
+  // Accent gems on inner ring
+  for(let i=0;i<Math.min(gc-1,8);i++){
+    const a=2*Math.PI*i/8;
+    addMini(g,Math.cos(a)*.8,Math.sin(a)*.8,0,.1);
+  }
+  // Pin on back (just visual)
+  const pin=mkM(new THREE.CylinderGeometry(.012,.008,.9,8));
+  pin.position.set(0,0,-.12); pin.rotation.x=Math.PI/2; g.add(pin);
+  return g;
+}
+
+function buildJewelry(type,gc){
+  switch(type){
+    case'ring':return buildRing(gc);
+    case'pendant':case'necklace':return buildPendant(gc);
+    case'earring':return buildEarring();
+    case'bracelet':return buildBracelet(gc);
+    case'brooch':return buildBrooch(gc);
+    default:return buildRing(gc);
+  }
+}
+
+function buildAndShow(type, gc) {
+  if(!renderer) initMainThree();
+  if(jGroup){scene.remove(jGroup);jGroup=null;}
+  const t0 = performance.now();
+  jGroup = buildJewelry(type, gc);
+  scene.add(jGroup);
+  const renderMs = Math.round(performance.now() - t0);
+  const p = CAM[type] || CAM.ring;
+  sph.th=p.th; sph.ph=p.ph; sph.r=p.r; lookY=p.ly;
+  // Update stats
+  let vc=0;
+  jGroup.traverse(o=>{if(o.isMesh)vc+=o.geometry.attributes.position?.count||0;});
+  $('vs-type').textContent = cap(type);
+  $('vs-verts').textContent = vc.toLocaleString() + ' verts';
+  $('vs-render').textContent = renderMs + ' ms';
+  calcPrice();
+}
+
+function updateMaterials() {
+  if(!jGroup) return;
+  jGroup.traverse(o=>{
+    if(!o.isMesh||!o.material) return;
+    const mat=o.material;
+    if(o.userData.isG){
+      const g=GEMS[curGem];
+      mat.color.setRGB(g.r/255,g.g/255,g.b/255);
+      mat.roughness=g.R; mat.transmission=g.T; mat.opacity=g.T>.1?.9:1;
+    } else {
+      const m=METALS[curMetal];
+      mat.color.setRGB(m.r/255,m.g/255,m.b/255); mat.metalness=m.M; mat.roughness=m.R;
+    }
+    mat.needsUpdate=true;
+  });
+}
+
+// ─── Viewer Controls ─────────────────────────────────────────
+function toggleAuto(){ autoRot=!autoRot; $('vc-auto').classList.toggle('active',autoRot); }
+function toggleWire(){
+  wireMode=!wireMode; $('vc-wire').classList.toggle('active',wireMode);
+  if(jGroup) jGroup.traverse(o=>{if(o.isMesh&&o.material)o.material.wireframe=wireMode;});
+}
+function resetCam(){ const p=CAM[curType]||CAM.ring; sph.th=p.th;sph.ph=p.ph;sph.r=p.r;lookY=p.ly; }
+
+// ═══════════════════════════════════════════════════════════════
+//  CUSTOMIZER UI
+// ═══════════════════════════════════════════════════════════════
+function buildCustomizerUI(){
+  // Metal swatches
+  $('metal-swatches').innerHTML = Object.entries(METALS).map(([k,m])=>`
+    <div class="sw-item">
+      <div class="sw-circle ${k===curMetal?'on':''}" style="background:${m.hex}"
+           onclick="pickMetal('${k}')" title="${m.name}"></div>
+      <span class="sw-name">${m.name.split(' (')[0]}</span>
+    </div>`).join('');
+
+  // Gem grid
+  $('gem-grid').innerHTML = Object.entries(GEMS).map(([k,g])=>`
+    <div class="gem-card ${k===curGem?'on':''}" onclick="pickGem('${k}')">
+      <div class="gem-icon" style="background:${g.hex}40">${g.e}</div>
+      <div>
+        <span class="gem-name">${g.name}</span>
+        <div class="gem-dots">${[...Array(5)].map((_,i)=>`<div class="gd ${i<g.tier?'on':'off'}"></div>`).join('')}</div>
+      </div>
+    </div>`).join('');
+
+  // Budget tiers — rich cards with icon, name, price range
+  const TIER_META = [
+    {icon:'🪙', name:'Budget',       range:'Under ₹5,000',   sym:'$'},
+    {icon:'💫', name:'Mid-Range',    range:'₹5,000–₹20,000', sym:'$$'},
+    {icon:'✨', name:'Premium',      range:'₹20,000–₹75,000',sym:'$$$'},
+    {icon:'💎', name:'Luxury',       range:'₹75,000–₹2L',    sym:'$$$$'},
+    {icon:'👑', name:'Ultra Luxury', range:'₹2L+',           sym:'$$$$$'},
+  ];
+  $('bgt-tiers').innerHTML = TIER_META.map((t,i)=>`
+    <div class="bgt-row" onclick="pickBudget(${i+1})">
+      <div class="bgt-row-main">
+        <div class="bgt-left">
+          <span class="bgt-icon">${t.icon}</span>
+          <div class="bgt-info">
+            <span class="bgt-name">${t.name}</span>
+            <span class="bgt-range">${t.range}</span>
+          </div>
+        </div>
+        <span class="bgt-sym">${t.sym}</span>
+      </div>
+    </div>`).join('');
+
+  updateChips(); updateMetalCard();
+}
+
+// These MUST be global so onclick="pickMetal(...)" in innerHTML can call them
+function pickMetal(k){
+  curMetal = k;
+  buildCustomizerUI();
+  showUpdating();
+  updateMaterials();
+  setTimeout(hideUpdating, 500);
+  updateMetalCard();
+  calcPrice();
+}
+function pickGem(k){
+  curGem = k;
+  buildCustomizerUI();
+  showUpdating();
+  updateMaterials();
+  setTimeout(hideUpdating, 500);
+  calcPrice();
+}
+
+// ── Per-budget material tables ─────────────────────────────────
+// Each tier maps to the exact metals + gems available in that price range
+const BUDGET_METALS = {
+  1: ['silver'],                              // Budget
+  2: ['silver','rose_gold'],                  // Mid-Range
+  3: ['rose_gold','yellow_gold','palladium'], // Premium
+  4: ['yellow_gold','white_gold','palladium'],// Luxury
+  5: ['yellow_gold','white_gold','platinum'], // Ultra Luxury
+};
+const BUDGET_GEMS = {
+  1: ['pearl','garnet'],                      // Budget
+  2: ['pearl','garnet','amethyst','topaz'],   // Mid-Range
+  3: ['amethyst','topaz','emerald'],          // Premium
+  4: ['emerald','ruby','sapphire'],           // Luxury
+  5: ['ruby','sapphire','diamond'],           // Ultra Luxury
+};
+
+// Track per-budget selection
+let bgtPickedMetal = '', bgtPickedGem = '';
+
+function pickBudget(tier){
+  // Highlight selected tier row
+  document.querySelectorAll('.bgt-row').forEach((el,i)=>el.classList.toggle('on',i+1===tier));
+
+  const availMetals = BUDGET_METALS[tier];
+  const availGems   = BUDGET_GEMS[tier];
+
+  // Auto-select first available in each category
+  bgtPickedMetal = availMetals[0];
+  bgtPickedGem   = availGems[0];
+
+  // Build the result panel
+  const res = $('bgt-result');
+  res.style.display = 'block';
+  res.innerHTML = `
+    <div class="bgt-result-header">
+      <span>✦</span> Materials for this budget
+    </div>
+
+    <div class="bgt-result-section">
+      <div class="bgt-section-label">⬡ Available Metals (${availMetals.length})</div>
+      <div class="bgt-options-row" id="bgt-metal-opts">
+        ${availMetals.map(k=>{
+          const m=METALS[k];
+          return `<div class="bgt-option ${k===bgtPickedMetal?'sel':''}" onclick="selectBgtMetal('${k}')">
+            <div class="bgt-option-dot" style="background:${m.hex}"></div>
+            ${m.name.split(' (')[0]}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="bgt-result-section">
+      <div class="bgt-section-label">◈ Available Gems (${availGems.length})</div>
+      <div class="bgt-options-row" id="bgt-gem-opts">
+        ${availGems.map(k=>{
+          const g=GEMS[k];
+          return `<div class="bgt-option ${k===bgtPickedGem?'sel':''}" onclick="selectBgtGem('${k}')">
+            <span>${g.e}</span> ${g.name}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="bgt-apply-bar">
+      <div class="bgt-apply-info">
+        <strong>${METALS[bgtPickedMetal].name.split(' (')[0]}</strong> + 
+        <strong>${GEMS[bgtPickedGem].name}</strong>
+      </div>
+      <button class="btn-primary" style="font-size:11px;padding:8px 16px"
+        onclick="applyBudgetSelection()">Apply to 3D →</button>
+    </div>`;
+}
+
+function selectBgtMetal(k){
+  bgtPickedMetal=k;
+  document.querySelectorAll('#bgt-metal-opts .bgt-option').forEach(el=>{
+    el.classList.toggle('sel', el.textContent.trim().includes(METALS[k].name.split(' (')[0]));
+  });
+  // Update apply bar info
+  const bar=document.querySelector('.bgt-apply-info');
+  if(bar) bar.innerHTML=`<strong>${METALS[bgtPickedMetal].name.split(' (')[0]}</strong> + <strong>${GEMS[bgtPickedGem].name}</strong>`;
+}
+
+function selectBgtGem(k){
+  bgtPickedGem=k;
+  document.querySelectorAll('#bgt-gem-opts .bgt-option').forEach(el=>{
+    el.classList.toggle('sel', el.textContent.trim().includes(GEMS[k].name));
+  });
+  const bar=document.querySelector('.bgt-apply-info');
+  if(bar) bar.innerHTML=`<strong>${METALS[bgtPickedMetal].name.split(' (')[0]}</strong> + <strong>${GEMS[bgtPickedGem].name}</strong>`;
+}
+
+function applyBudgetSelection(){
+  if(!bgtPickedMetal||!bgtPickedGem){toast('Select a metal and gem first','err');return;}
+  pickMetal(bgtPickedMetal);
+  setTimeout(()=>pickGem(bgtPickedGem),100);
+  // Switch to metals tab to show the result
+  setTimeout(()=>switchTab('metals',document.getElementById('ctab-metals')),200);
+  toast(`Applied: ${METALS[bgtPickedMetal].name.split(' (')[0]} + ${GEMS[bgtPickedGem].name} ✓`,'ok',4000);
+}
+
+function applyBudget(g,m){ if(g)pickGem(g); if(m)pickMetal(m); toast('Budget suggestions applied ✓','ok'); }
+
+function updateChips(){
+  const m=METALS[curMetal],g=GEMS[curGem];
+  $('chip-metal-dot').style.background=m.hex; $('chip-metal-name').textContent=m.name.split(' (')[0];
+  $('chip-gem-dot').style.background=g.hex;   $('chip-gem-name').textContent=g.name;
+}
+function updateMetalCard(){
+  const m=METALS[curMetal];
+  $('mi-name').textContent=m.name; $('mi-met').textContent=m.M.toFixed(2);
+  $('mi-rgh').textContent=m.R.toFixed(2);
+  $('mi-tier').textContent='★'.repeat(m.tier)+'☆'.repeat(5-m.tier);
+}
+function switchTab(id, btn){
+  document.querySelectorAll('.ctab-pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));
+  $('tp-'+id).classList.add('on'); btn.classList.add('on');
+}
+function showUpdating(){ $('upd-pill').classList.add('show'); }
+function hideUpdating(){ $('upd-pill').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPORT  — bakes PBR materials + base64 data URL download
+// ═══════════════════════════════════════════════════════════════
+
+function bufToB64(buf){
+  // Chunk to avoid call-stack overflow on large buffers
+  const bytes = new Uint8Array(buf instanceof ArrayBuffer ? buf : buf.buffer || buf);
+  let bin = '', chunk = 8192;
+  for(let i = 0; i < bytes.length; i += chunk)
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(bin);
+}
+
+function dlDataURL(dataURL, filename){
+  const a = document.createElement('a');
+  a.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+  a.href = dataURL;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=> a.remove(), 600);
+}
+
+// Bake live Three.js materials → proper GLB PBR materials
+// Returns a map of mesh → original material so we can restore later
+function bakeMaterials(group) {
+  const originals = new Map();
+  const mData = METALS[curMetal];
+  const gData  = GEMS[curGem];
+
+  group.traverse(obj => {
+    if (!obj.isMesh) return;
+    originals.set(obj, obj.material);
+
+    if (obj.userData.isG) {
+      // Gemstone → MeshPhysicalMaterial with transmission
+      obj.material = new THREE.MeshPhysicalMaterial({
+        name: gData.name,
+        color: new THREE.Color(gData.r/255, gData.g/255, gData.b/255),
+        metalness: 0,
+        roughness: gData.R,
+        transmission: gData.T,
+        ior: gData.ior,
+        transparent: gData.T > 0,
+        opacity: gData.T > 0 ? 0.88 : 1.0,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.0,
+      });
+    } else {
+      // Metal band / prong / setting → MeshStandardMaterial
+      obj.material = new THREE.MeshStandardMaterial({
+        name: mData.name,
+        color: new THREE.Color(mData.r/255, mData.g/255, mData.b/255),
+        metalness: mData.M,
+        roughness: mData.R,
+      });
+    }
+  });
+  return originals;
+}
+
+function restoreMaterials(group, originals) {
+  group.traverse(obj => {
+    if (!obj.isMesh) return;
+    const orig = originals.get(obj);
+    if (orig) {
+      obj.material.dispose();
+      obj.material = orig;
+    }
+  });
+}
+
+function doExport(fmt) {
+  if (!jGroup) {
+    toast('Generate a 3D model first — upload a photo or click a demo button', 'err', 4000);
+    return;
+  }
+
+  // 1. Scale ×10 → 1 unit = 1 mm
+  jGroup.scale.setScalar(10);
+  jGroup.updateMatrixWorld(true);
+
+  // 2. Bake proper PBR materials for export
+  const origMats = bakeMaterials(jGroup);
+
+  if (fmt === 'glb') {
+    try {
+      new THREE.GLTFExporter().parse(
+        jGroup,
+        function(result) {
+          // 3. Restore live materials immediately
+          restoreMaterials(jGroup, origMats);
+          jGroup.scale.setScalar(1);
+
+          const isBuffer = result instanceof ArrayBuffer;
+          const b64  = bufToB64(isBuffer ? result : new TextEncoder().encode(JSON.stringify(result)));
+          const mime = isBuffer ? 'model/gltf-binary' : 'model/gltf+json';
+          dlDataURL('data:' + mime + ';base64,' + b64, 'gemcraft_' + curType + '.glb');
+          toast('GLB ready ✓  Open in Windows 3D Viewer, Blender, or gltf-viewer.donmccurdy.com', 'ok', 6000);
+        },
+        { binary: true, forceIndices: true, truncateDrawRange: false }
+      );
+    } catch(e) {
+      restoreMaterials(jGroup, origMats);
+      jGroup.scale.setScalar(1);
+      toast('GLB error: ' + e.message, 'err');
+    }
+
+  } else { // STL — no materials, but geometry is correct
+    try {
+      restoreMaterials(jGroup, origMats); // restore before STL (no mat info anyway)
+      const result = new THREE.STLExporter().parse(jGroup, { binary: true });
+      jGroup.scale.setScalar(1);
+      const b64 = bufToB64(result);
+      dlDataURL('data:application/octet-stream;base64,' + b64, 'gemcraft_' + curType + '.stl');
+      toast('STL ready ✓  Open in Cura, PrusaSlicer, Meshmixer, or Tinkercad', 'ok', 6000);
+    } catch(e) {
+      jGroup.scale.setScalar(1);
+      toast('STL error: ' + e.message, 'err');
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  WOW FEATURES — All new functionality
+// ═══════════════════════════════════════════════════════════════
+
+// ─── PRICE ESTIMATION ─────────────────────────────────────────
+const PRICE_DATA = {
+  metals: {
+    silver:      {base:400,  unit:'g', name:'Sterling Silver'},
+    rose_gold:   {base:3800, unit:'g', name:'Rose Gold 14k'},
+    yellow_gold: {base:6200, unit:'g', name:'Yellow Gold 18k'},
+    white_gold:  {base:6200, unit:'g', name:'White Gold 18k'},
+    platinum:    {base:3100, unit:'g', name:'Platinum 950'},
+    palladium:   {base:5500, unit:'g', name:'Palladium'},
+  },
+  gems: {
+    pearl:    {base:800,   unit:'ct', name:'Pearl'},
+    garnet:   {base:1500,  unit:'ct', name:'Garnet'},
+    amethyst: {base:2500,  unit:'ct', name:'Amethyst'},
+    topaz:    {base:3200,  unit:'ct', name:'Blue Topaz'},
+    emerald:  {base:18000, unit:'ct', name:'Emerald'},
+    ruby:     {base:22000, unit:'ct', name:'Ruby'},
+    sapphire: {base:20000, unit:'ct', name:'Sapphire'},
+    diamond:  {base:45000, unit:'ct', name:'Diamond'},
+  },
+  typeWeight: {ring:4,pendant:3,earring:2,bracelet:10,brooch:8,necklace:12},
+  typeMaking: {ring:2500,pendant:2000,earring:1500,bracelet:4000,brooch:3500,necklace:5000},
+};
+
+function calcPrice() {
+  const m = PRICE_DATA.metals[curMetal] || PRICE_DATA.metals.yellow_gold;
+  const g = PRICE_DATA.gems[curGem]     || PRICE_DATA.gems.diamond;
+  const wt = (PRICE_DATA.typeWeight[curType] || 4);
+  const gemCt = curGC * 0.5;
+  const metalCost  = Math.round(m.base * wt);
+  const gemCost    = Math.round(g.base * gemCt);
+  const makingCost = PRICE_DATA.typeMaking[curType] || 2500;
+  const total      = metalCost + gemCost + makingCost;
+  const lo = Math.round(total * 0.85);
+  const hi = Math.round(total * 1.18);
+  const fmt = n => '₹' + n.toLocaleString('en-IN');
+  $('price-main').textContent  = fmt(total);
+  $('price-range').textContent = fmt(lo) + ' – ' + fmt(hi);
+  $('price-breakdown').innerHTML = `<span>Metal (${wt}g): ${fmt(metalCost)}</span><span>Gem ×${curGC}: ${fmt(gemCost)}</span><span>Making: ${fmt(makingCost)}</span>`;
+}
+
+// ─── AI DESIGN SUGGESTIONS ────────────────────────────────────
+const DESIGN_STYLES = {
+  premium:    {gem:'diamond',   metal:'platinum',    gc_mult:2, desc:'Upgraded to Diamond + Platinum with increased gem count — the pinnacle of luxury.'},
+  minimalist: {gem:'topaz',     metal:'white_gold',  gc_mult:0.5, desc:'Clean Blue Topaz in White Gold with reduced complexity — understated elegance.'},
+  bridal:     {gem:'diamond',   metal:'rose_gold',   gc_mult:3, desc:'Classic Diamond + Rose Gold combination — timeless bridal perfection.'},
+  vintage:    {gem:'ruby',      metal:'yellow_gold', gc_mult:2, desc:'Ruby in Yellow Gold with ornate settings — rich vintage glamour.'},
+  mughal:     {gem:'emerald',   metal:'yellow_gold', gc_mult:4, desc:'Emerald in Yellow Gold — evokes royal Mughal jewellery heritage.'},
+};
+
+async function applyDesignStyle(style) {
+  const ds = DESIGN_STYLES[style];
+  if (!ds) return;
+  const btn = document.querySelector(`.adb-btn[onclick="applyDesignStyle('${style}')"]`);
+  if (btn) { btn.classList.add('loading'); btn.textContent = '⟳ Applying…'; }
+
+  curMetal = ds.metal;
+  curGem   = ds.gem;
+  curGC    = Math.max(1, Math.round((GC_MAP[curType]||1) * ds.gc_mult));
+
+  if (jGroup) {
+    buildAndShow(curType, curGC);
+    updateMaterials();
+  }
+  buildCustomizerUI();
+  calcPrice();
+
+  const res = $('adb-result');
+  res.style.display = 'block';
+  res.innerHTML = `<strong>✦ ${style.charAt(0).toUpperCase()+style.slice(1)} Applied</strong><br>${ds.desc}`;
+
+  if (btn) { btn.classList.remove('loading'); }
+  const labels = {premium:'👑 Make it Premium',minimalist:'◻ Minimalist',bridal:'🌸 Bridal Style',vintage:'🏺 Vintage',mughal:'🕌 Mughal'};
+  if (btn) btn.textContent = labels[style] || style;
+  toast(`Design style "${style}" applied ✓`,'ok');
+}
+
+// ─── STYLE TRANSFER ───────────────────────────────────────────
+const STYLE_TRANSFER = {
+  mughal:   {gem:'emerald',   metal:'yellow_gold', gcBoost:3, note:'Intricate filigree, deep emeralds, polychrome enamel — the grandeur of Mughal courts.'},
+  art_deco: {gem:'sapphire',  metal:'platinum',    gcBoost:2, note:'Geometric symmetry, sapphire contrast, clean platinum lines — Art Deco mastery.'},
+  modern:   {gem:'diamond',   metal:'white_gold',  gcBoost:1, note:'Sleek, minimal, brilliant — modern jewelry for the contemporary soul.'},
+  boho:     {gem:'amethyst',  metal:'rose_gold',   gcBoost:2, note:'Free-spirited amethyst set in warm rose gold — bohemian spirit unleashed.'},
+  royal:    {gem:'ruby',      metal:'yellow_gold', gcBoost:4, note:'Deep rubies in yellow gold — jewels worthy of royalty.'},
+};
+
+async function applyStyleTransfer(style) {
+  const st = STYLE_TRANSFER[style];
+  if (!st) return;
+  document.querySelectorAll('.st-btn').forEach(b=>b.classList.remove('on'));
+  const btn = document.querySelector(`.st-btn[onclick="applyStyleTransfer('${style}')"]`);
+  if (btn) btn.classList.add('on');
+
+  curMetal = st.metal;
+  curGem   = st.gem;
+  curGC    = Math.min(12, (GC_MAP[curType]||1) + st.gcBoost);
+  if (jGroup) { buildAndShow(curType, curGC); updateMaterials(); }
+  buildCustomizerUI();
+  calcPrice();
+
+  const res = $('st-result');
+  res.style.display = 'block';
+  res.textContent = st.note;
+  toast(`Style Transfer: ${style} applied ✓`,'ok');
+}
+
+// ─── AI EXPLANATION PANEL ─────────────────────────────────────
+function buildExplanation(analysis) {
+  const panel = $('ai-explain-panel');
+  const list  = $('explain-list');
+  if (!analysis || !list) return;
+
+  const explanations = [];
+  const gc = analysis.gem_count || curGC;
+  const sym = Math.round((analysis.symmetry||.85)*100);
+  const type = analysis.jewelry_type || curType;
+
+  if (type === 'ring') {
+    if (gc === 1) explanations.push({b:'Single stone', t:'Only one center gem detected → classic solitaire setting — the most timeless ring design.'});
+    else if (gc <= 3) explanations.push({b:'3-stone setting', t:gc + ' gems detected → likely trilogy ring symbolising past, present & future.'});
+    else explanations.push({b:'Pavé / multi-stone', t:gc + ' gems → suggests a halo or channel-set pavé design with accent stones.'});
+  }
+  if (sym >= 85) explanations.push({b:'High symmetry (' + sym + '%)', t:'Balanced geometry → likely machine-made or CAD-designed for precision manufacturing.'});
+  else explanations.push({b:'Organic symmetry (' + sym + '%)', t:'Asymmetric form → suggests hand-crafted artisan piece with intentional irregularities.'});
+  if (analysis.metal_guess) explanations.push({b:'Metal: ' + (METALS[analysis.metal_guess]?.name || analysis.metal_guess), t:'Color and reflectance analysis indicates ' + (METALS[analysis.metal_guess]?.name || '') + ' finish.'});
+  if (analysis.style) explanations.push({b:'Style: ' + analysis.style, t:'Overall design language classified as ' + analysis.style + ' based on proportions and decorative elements.'});
+
+  list.innerHTML = explanations.map(e =>
+    `<div class="explain-item"><div class="explain-dot"></div><div><b>${e.b}</b> — ${e.t}</div></div>`
+  ).join('');
+  panel.classList.add('visible');
+}
+
+// ─── PRO CAD MODE ─────────────────────────────────────────────
+let cadSettings = {diameter:17, gemsize:1.0, prongs:4, thickness:1.0};
+
+function setMode(mode) {
+  $('mode-basic').classList.toggle('on', mode==='basic');
+  $('mode-pro').classList.toggle('on', mode==='pro');
+  const panel = $('pro-cad-panel');
+  panel.classList.toggle('visible', mode==='pro');
+  if (mode==='pro') toast('Pro CAD Mode — adjust ring parameters and hit Rebuild','info',4000);
+}
+
+function cadUpdate(param, val) {
+  cadSettings[param] = parseFloat(val);
+  const labels = {diameter:'cad-diameter', gemsize:'cad-gemsize', prongs:'cad-prongs', thickness:'cad-thickness'};
+  const fmts   = {diameter: v=>v+'mm', gemsize: v=>parseFloat(v).toFixed(1)+'×', prongs: v=>v, thickness: v=>parseFloat(v).toFixed(1)+'×'};
+  $( labels[param] ).textContent = fmts[param](val);
+}
+
+function applyCAD() {
+  if (!jGroup) { toast('Build a model first','err'); return; }
+  // Apply scale to the gem and band based on CAD settings
+  jGroup.traverse(o => {
+    if (!o.isMesh) return;
+    if (o.userData.isG) {
+      o.scale.setScalar(cadSettings.gemsize);
+    } else {
+      // scale band thickness
+      const ts = cadSettings.thickness;
+      o.scale.set(ts, 1, ts);
+    }
+  });
+  toast(`CAD applied — Ø${cadSettings.diameter}mm · Gem ${cadSettings.gemsize}× · ${cadSettings.prongs} prongs ✓`,'ok',4000);
+}
+
+// ─── VIRTUAL TRY-ON ───────────────────────────────────────────
+let tryOnActive = false;
+let tryOnStream = null;
+let tryOnMode   = 'ring';
+let tryOnScale  = 1.0;
+let tryOnRenderer = null;
+let tryOnScene = null;
+let tryOnCamera = null;
+let tryOnAnimId = null;
+
+function setTryOnMode(mode) {
+  tryOnMode = mode;
+  document.querySelectorAll('.tryon-mode-btn').forEach(b=>b.classList.remove('on'));
+  const btn = document.getElementById('trymode-' + mode);
+  if (btn) btn.classList.add('on');
+}
+
+function tryonScaleUpdate(val) {
+  tryOnScale = parseFloat(val);
+  $('tryon-scale-val').textContent = parseFloat(val).toFixed(1) + '×';
+  if (tryOnScene) {
+    tryOnScene.traverse(o=>{ if(o.isMesh||o.isGroup) o.scale.setScalar(tryOnScale*0.18); });
+  }
+}
+
+async function startTryOn() {
+  if (tryOnActive) return;
+  if (!jGroup) { toast('Build a 3D model in the studio first, then use Try-On','info',4000); return; }
+  try {
+    tryOnStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480}});
+    const vid = $('tryon-video');
+    vid.srcObject = tryOnStream;
+    await vid.play();
+    $('tryon-overlay-msg').style.display = 'none';
+    tryOnActive = true;
+    $('tryon-dot').classList.add('active');
+    $('tryon-status-text').textContent = 'Camera active — detecting hand…';
+    initTryOnRenderer();
+    runTryOnLoop();
+    toast('Virtual Try-On started ✓','ok');
+  } catch(e) {
+    toast('Camera access denied — please allow camera permission','err',5000);
+  }
+}
+
+function stopTryOn() {
+  tryOnActive = false;
+  if (tryOnStream) { tryOnStream.getTracks().forEach(t=>t.stop()); tryOnStream=null; }
+  if (tryOnAnimId) { cancelAnimationFrame(tryOnAnimId); tryOnAnimId=null; }
+  $('tryon-dot').classList.remove('active');
+  $('tryon-status-text').textContent = 'Camera off';
+  $('tryon-overlay-msg').style.display = 'flex';
+}
+
+function initTryOnRenderer() {
+  const canvas = $('tryon-canvas');
+  const wrap   = $('tryon-video-wrap');
+  canvas.width  = wrap.offsetWidth;
+  canvas.height = wrap.offsetHeight;
+  if (!tryOnRenderer) {
+    tryOnRenderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+    tryOnRenderer.setPixelRatio(1);
+    tryOnRenderer.setClearColor(0x000000, 0);
+    tryOnRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    tryOnRenderer.toneMappingExposure = 1.5;
+    tryOnScene  = new THREE.Scene();
+    tryOnCamera = new THREE.PerspectiveCamera(60, canvas.width/canvas.height, 0.01, 50);
+    tryOnCamera.position.set(0, 0, 3);
+    const amb = new THREE.AmbientLight(0xffffff, 1.2); tryOnScene.add(amb);
+    const dir = new THREE.DirectionalLight(0xfff5e0, 2.5); dir.position.set(2,4,3); tryOnScene.add(dir);
+    const dir2= new THREE.DirectionalLight(0xffe0f0, 1.5); dir2.position.set(-2,1,-2); tryOnScene.add(dir2);
+  }
+  tryOnRenderer.setSize(canvas.width, canvas.height);
+  tryOnCamera.aspect = canvas.width/canvas.height;
+  tryOnCamera.updateProjectionMatrix();
+}
+
+function detectHandPosition(videoEl) {
+  // Skin-tone pixel analysis on video frame
+  const W=80, H=60;
+  const cv = document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(videoEl, 0, 0, W, H);
+  const d = ctx.getImageData(0,0,W,H).data;
+  let sx=0,sy=0,n=0;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const i=(y*W+x)*4, r=d[i],g=d[i+1],b=d[i+2];
+    // Skin tone heuristic
+    if(r>100&&g>50&&b>30&&r>g&&r>b&&(r-b)>20&&Math.abs(r-g)<55){
+      sx+=x; sy+=y; n++;
+    }
+  }
+  if(n<50) return null;
+  return {x: sx/n/W, y: sy/n/H};
+}
+
+function buildTryOnJewelry() {
+  // Clone jGroup materials for try-on scene
+  const g = buildJewelry(curType, curGC);
+  g.traverse(o=>{
+    if(o.isMesh){
+      if(o.userData.isG) o.material = matGem();
+      else               o.material = matMetal();
+    }
+  });
+  return g;
+}
+
+let tryOnJewel = null;
+let tryOnFrameCount = 0;
+let tryPos = {x:0,y:0};
+let targetPos = {x:0,y:0};
+
+function runTryOnLoop() {
+  if (!tryOnActive) return;
+  tryOnAnimId = requestAnimationFrame(runTryOnLoop);
+  tryOnFrameCount++;
+
+  const vid = $('tryon-video');
+  if (vid.readyState < 2) { tryOnRenderer.render(tryOnScene, tryOnCamera); return; }
+
+  // Detect every 6 frames for performance
+  if (tryOnFrameCount % 6 === 0) {
+    const pos = detectHandPosition(vid);
+    if (pos) {
+      // Flip x (mirror) and map to 3D coords
+      const nx = (0.5 - pos.x) * 4;
+      const ny = (0.5 - pos.y) * 3;
+      targetPos = {x:nx, y:ny};
+      $('tryon-status-text').textContent = '✓ Hand detected · overlaying jewelry';
+    } else {
+      $('tryon-status-text').textContent = 'Searching for hand… hold your hand in frame';
+    }
+  }
+
+  // Smooth lerp towards target
+  tryPos.x += (targetPos.x - tryPos.x) * 0.15;
+  tryPos.y += (targetPos.y - tryPos.y) * 0.15;
+
+  // Rebuild jewelry if not present
+  if (!tryOnJewel) {
+    tryOnJewel = buildTryOnJewelry();
+    tryOnJewel.scale.setScalar(tryOnScale * 0.18);
+    tryOnScene.add(tryOnJewel);
+  }
+
+  tryOnJewel.position.set(tryPos.x, tryPos.y, 0);
+
+  // Mode-specific offset
+  if (tryOnMode === 'pendant') tryOnJewel.position.y -= 0.3;
+  if (tryOnMode === 'earring') { tryOnJewel.position.x += 1.2; tryOnJewel.position.y += 0.5; }
+
+  tryOnJewel.rotation.y += 0.018;
+  tryOnRenderer.render(tryOnScene, tryOnCamera);
+}
+
+// ─── PERF: Track render time ──────────────────────────────────
+let lastFrameTimeStamp = 0;
+
+// ─── MODE ─────────────────────────────────────────────────────
+// (mode toggle is already wired above)
+
+window.addEventListener('DOMContentLoaded', () => {
+
+  buildCustomizerUI();   // UI ready and clickable immediately
+  initMainThree();       // single WebGL context for the studio viewer
+  $('viewer-empty').style.display = 'flex';
+  $('viewer-load').style.display  = 'none';
+  $('three-canvas').style.display = 'none';
+  aipInit();             // boot AI chat
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  AGENTIC AI CHAT
+// ═══════════════════════════════════════════════════════════════
+let aipOpen = false;
+let aipHistory = [];
+let aipMsgId = 0;
+
+const AIP_SYSTEM = `You are a world-class jewelry designer and gemologist for Gemcraft AI, a luxury jewelry design studio. You have deep expertise in:
+- All gemstones: diamonds, rubies, sapphires, emeralds, amethysts, blue topaz, garnet, pearls — properties, symbolism, grading, care
+- Precious metals: yellow gold, white gold, rose gold, platinum, palladium, silver — properties, alloys, durability, price
+- Jewelry design: solitaire, halo, pavé, bezel, tension, vintage, art deco, minimalist, statement styles
+- Jewelry types: rings (especially engagement/wedding), pendants, earrings, bracelets, brooches, necklaces
+- Occasions: engagement, anniversary, birthday, everyday wear, gifts
+- Skin tone harmony, budget planning, Indian and global jewelry markets
+
+You are warm, knowledgeable and concise. Use **bold** for key terms. Keep replies under 120 words unless a detailed answer is genuinely needed. When relevant, mention what the user can try directly in the studio (e.g. "Try switching to Rose Gold in the Metals tab", "Use the AI Design Suggestions to apply Bridal style", "Check the Live Price Estimate for cost", "Try the Virtual Try-On to see it on your hand").`;
+
+function aipCtx(){
+  return `Studio context — Current 3D model: ${curType||'none'}, Metal: ${METALS[curMetal]?.name||curMetal}, Gem: ${GEMS[curGem]?.name||curGem}, Gem count: ${curGC}.`;
+}
+
+function toggleAIPanel(){
+  aipOpen = !aipOpen;
+  $('ai-panel').classList.toggle('open', aipOpen);
+  if(aipOpen) setTimeout(()=>$('aip-input').focus(), 300);
+}
+
+function aipInit(){
+  aipAddMsg('ai', 'Hello! 👋 I\'m your **AI Design Assistant**.\n\nAsk me anything — gem meanings, metal comparisons, styling for any occasion, or care tips. I can also help you choose the right combination for your budget!');
+}
+
+function aipQuick(text){ $('aip-input').value=text; aipSend(); }
+
+function aipKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aipSend();} }
+
+function aipResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,88)+'px'; }
+
+// ─── Local jewelry knowledge base ────────────────────────────
+const JEWELRY_KB = [
+  {q:['skin','warm','tone','complexion'],a:'For **warm skin tones**, Yellow Gold and Rose Gold are most flattering. Try switching to **Rose Gold** in the Metals tab — the peachy undertones complement golden skin beautifully.'},
+  {q:['engagement','propose','marriage','wedding'],a:'For an **engagement ring**, Diamond in Rose Gold or Platinum is timeless. A solitaire with 6 prongs maximises the stone\'s brilliance. Try the **Bridal** style in AI Design Suggestions!'},
+  {q:['platinum','white gold','difference'],a:'**Platinum** is denser, hypoallergenic, and develops a natural patina over time. **White Gold** is rhodium-plated (needs re-plating every few years) but is more affordable. Platinum is tier 5 vs tier 4.'},
+  {q:['emerald','care','clean'],a:'**Emeralds** are delicate — avoid ultrasonic cleaners. Wipe with a soft damp cloth. Most emeralds have natural inclusions (called *jardin*) — this is normal and not a defect.'},
+  {q:['daily','everyday','wear','durable'],a:'For daily wear, choose **Sterling Silver or Yellow Gold** with a **Garnet or Topaz** — both are hardness 7–8 on Mohs scale. Avoid Pearl and Emerald for daily rings as they scratch easily.'},
+  {q:['budget','cheap','affordable','price'],a:'The **Budget tier** (under ₹5,000) features Sterling Silver + Pearl or Garnet. Check the **Live Price Estimate** at the bottom of the customizer — it updates in real time as you change materials!'},
+  {q:['ruby','meaning','symbolism'],a:'**Ruby** symbolises passion, love, and vitality. Known as the "King of Gems", it ranks 9 on the Mohs scale — extremely durable. Deep red rubies from Myanmar are the most prized.'},
+  {q:['sapphire'],a:'**Sapphire** (hardness 9) symbolises wisdom and loyalty. While classically blue, it comes in every colour except red. Famous: Princess Diana\'s engagement ring was a blue sapphire!'},
+  {q:['diamond'],a:'**Diamond** (hardness 10) is the hardest natural substance. Graded on the 4 Cs: Cut, Colour, Clarity, Carat. A well-cut diamond reflects light brilliantly — the cut matters most for sparkle.'},
+  {q:['pearl'],a:'**Pearls** are organic gems formed by molluscs. Freshwater pearls are more affordable; Akoya and South Sea pearls are premium. Pearls are soft (Mohs 2.5–4.5) — apply perfume before wearing them.'},
+  {q:['export','download','glb','stl','blender','print'],a:'Use the **Export section** at the bottom of the customizer. **GLB** is for Blender, Unity, and web viewers. **STL** is for 3D printing — geometry is pre-scaled to 1 unit = 1mm!'},
+  {q:['pro','cad','diameter','prong','thickness'],a:'Switch to **Pro CAD Mode** using the toggle at the top of the customizer. You can adjust ring diameter, gem size, prong count, and band thickness with live sliders.'},
+  {q:['try','camera','ar','hand'],a:'Scroll down to the **Virtual Try-On** section! Click "Start Camera", point at your hand, and the 3D jewelry overlays live in your browser — no data is sent anywhere.'},
+  {q:['hugging','hf','huggingface','smarter','better','accurate','analysis'],a:'Add your **Hugging Face API key** (free at huggingface.co/settings/tokens) in the small key bar above the demo buttons. With it, the BLIP vision model reads your actual photo and detects gem type, metal color and jewelry style — much smarter than pixel analysis!'},
+];
+
+function aipLocalReply(text) {
+  const lower = text.toLowerCase();
+  for (const entry of JEWELRY_KB) {
+    if (entry.q.some(kw => lower.includes(kw))) return entry.a;
+  }
+  // Fallback: context-aware
+  const metal = METALS[curMetal]?.name || curMetal;
+  const gem   = GEMS[curGem]?.name || curGem;
+  return `Currently showing a **${cap(curType)}** with **${metal}** and **${gem}**. Try asking about specific gems, metals, styles, the Try-On feature, or exporting your model!`;
+}
+
+async function aipSend(){
+  const input=$('aip-input');
+  const text=input.value.trim(); if(!text) return;
+  input.value=''; aipResize(input);
+  aipAddMsg('user',text);
+  $('aip-send').disabled=true;
+
+  // Small typing delay for UX
+  const tid=aipAddTyping();
+  await sleep(420);
+  aipRemoveTyping(tid);
+
+  const reply = aipLocalReply(text);
+  aipHistory.push({role:'user',content:text},{role:'assistant',content:reply});
+  if(aipHistory.length>24) aipHistory=aipHistory.slice(-24);
+  aipAddMsg('ai', reply);
+
+  $('aip-send').disabled=false;
+}
+
+function aipAddMsg(role,text){
+  const box=$('aip-msgs');
+  const div=document.createElement('div');
+  div.className=`aip-msg ${role}`;
+  const av=role==='ai'?'✦':'U';
+  const fmt=text
+    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+    .replace(/\*(.+?)\*/g,'<i>$1</i>')
+    .replace(/\n/g,'<br>');
+  div.innerHTML=`<div class="aip-av">${av}</div><div class="aip-bubble">${fmt}</div>`;
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+  return div;
+}
+
+function aipAddTyping(){
+  const box=$('aip-msgs');
+  const id='aipty'+(++aipMsgId);
+  const div=document.createElement('div');
+  div.className='aip-msg ai'; div.id=id;
+  div.innerHTML=`<div class="aip-av">✦</div><div class="aip-bubble"><div class="aip-typing"><div class="aip-td"></div><div class="aip-td"></div><div class="aip-td"></div></div></div>`;
+  box.appendChild(div); box.scrollTop=box.scrollHeight;
+  return id;
+}
+
+function aipRemoveTyping(id){ document.getElementById(id)?.remove(); }
+</script>
+</body>
+</html>
