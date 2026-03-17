@@ -16,7 +16,7 @@ AI / 3D Web Visualization
 
 🎥 Demo Video
 
-https://drive.google.com/drive/u/0/folders/1begkYmHll2iO4WHiwjnxKuutIeA5CL9R
+https://drive.google.com/file/d/1xcAG7HMFHj1xk6d7M4Tw4J6ONZRCDQ_h/view?usp=drivesdk
 
 📊 Presentation (PPT)
 
